@@ -3,6 +3,7 @@ title: Blog posts
 layout: default
 nav_exclude: true
 nav_show: false
+nav_order: -1
 permalink: /blog/
 ---
 {% for post in site.posts %}

@@ -2,6 +2,7 @@
 layout: table_wrappers
 title: Home
 nav_exclude: true
+nav_order: -1
 ---
 
 <!DOCTYPE html>
@@ -10,98 +11,162 @@ nav_exclude: true
 {% include head.html %}
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="link" viewBox="0 0 16 16">
+  <symbol id="svg-link" viewBox="0 0 24 24">
     <title>Link</title>
-    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-link">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+    </svg>
+  </symbol>
+  <symbol id="svg-search" viewBox="0 0 24 24">
+    <title>Search</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-doc" viewBox="0 0 24 24">
+    <title>Document</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+      <polyline points="13 2 13 9 20 9"></polyline>
+    </svg>
   </symbol>
 </svg>
 
-<div class="page-wrap">
-  <div class="side-bar">
-    <div class="site-header">
-      <a href="{{ site.url }}{{ site.baseurl }}" class="site-title lh-tight">{% include title.html %}</a>
-      <!-- TODO: uncomment before release :)
-      <a href="https://search.maven.org/search?q=g:ru.chermenin.kio%20AND%20a:kio-*" target="_blank" class="lh-tight">
-        <img class="mr-2" alt="Version" src="https://img.shields.io/maven-central/v/ru.chermenin.kio/kio-core?color=6132cb&label=%20">
-      </a>
-      -->
-      <button class="menu-button fs-3 js-main-nav-trigger" data-text-toggle="Hide" type="button">Menu</button>
+<div class="side-bar">
+  <div class="site-header">
+    <a href="{{ '/' | absolute_url }}" class="site-title lh-tight">{% include title.html %}</a>
+    <a href="#" id="menu-button" class="site-button">
+      <svg viewBox="0 0 24 24" class="icon"><use xlink:href="#svg-menu"></use></svg>
+    </a>
+  </div>
+  <nav role="navigation" aria-label="Main" id="site-nav" class="site-nav">
+    {%- include blog_post_nav.html -%}
+  </nav>
+  {% if site.footer_content != nil %}
+  <footer class="site-footer">
+    <p class="text-small text-grey-dk-000 mb-4">{{ site.footer_content }}</p>
+  </footer>
+  {% endif %}
+</div>
+<div class="main" id="top">
+  <div id="main-header" class="main-header">
+    {% if site.search_enabled != false %}
+    <div class="search">
+      <div class="search-input-wrap">
+        <input type="text" id="search-input" class="search-input" tabindex="0" placeholder="Search {{ site.title }}"
+               aria-label="Search {{ site.title }}" autocomplete="off">
+        <label for="search-input" class="search-label">
+          <svg viewBox="0 0 24 24" class="search-icon">
+            <use xlink:href="#svg-search"></use>
+          </svg>
+        </label>
+      </div>
+      <div id="search-results" class="search-results"></div>
     </div>
-
-    <div class="navigation main-nav js-main-nav">
-      {%- include blog_post_nav.html -%}
-    </div>
-
-    {% if site.footer_content != nil %}
-    <footer class="site-footer">
-      <p class="text-small text-grey-dk-000 mb-4">{{ site.footer_content }}</p>
-    </footer>
+    {% endif %}
+    {% if site.aux_links %}
+    <nav aria-label="Auxiliary" class="aux-nav">
+      <ul class="aux-nav-list">
+        {% for link in site.aux_links %}
+        <li class="aux-nav-list-item">
+          <a href="{{ link.last }}" class="site-button"
+             {% if site.aux_links_new_tab %}
+             target="_blank" rel="noopener noreferrer"
+             {% endif %}
+          >
+            {{ link.first }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
     {% endif %}
   </div>
-  <div class="main-content-wrap js-main-content" tabindex="0">
-    <div class="main-content">
-      <div class="page-header js-page-header">
-        {% if site.search_enabled != false %}
-        <div class="search">
-          <div class="search-input-wrap">
-            <input type="text" class="js-search-input search-input" tabindex="0" placeholder="Search {{ site.title }}" aria-label="Search {{ site.title }}" autocomplete="off">
-            <svg width="14" height="14" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg" class="search-icon"><title>Search</title><g fill-rule="nonzero"><path d="M17.332 20.735c-5.537 0-10-4.6-10-10.247 0-5.646 4.463-10.247 10-10.247 5.536 0 10 4.601 10 10.247s-4.464 10.247-10 10.247zm0-4c3.3 0 6-2.783 6-6.247 0-3.463-2.7-6.247-6-6.247s-6 2.784-6 6.247c0 3.464 2.7 6.247 6 6.247z"/><path d="M11.672 13.791L.192 25.271 3.02 28.1 14.5 16.62z"/></g></svg>
+  <div id="main-content-wrap" class="main-content-wrap">
+    {% unless page.url == "/" %}
+    {% if page.parent %}
+    <nav aria-label="Breadcrumb" class="breadcrumb-nav">
+      <ol class="breadcrumb-nav-list">
+        {% if page.grand_parent %}
+        <li class="breadcrumb-nav-list-item"><a href="{{ first_level_url }}">{{ page.grand_parent }}</a></li>
+        <li class="breadcrumb-nav-list-item"><a href="{{ second_level_url }}">{{ page.parent }}</a></li>
+        {% else %}
+        <li class="breadcrumb-nav-list-item"><a href="{{ first_level_url }}">{{ page.parent }}</a></li>
+        {% endif %}
+        <li class="breadcrumb-nav-list-item"><span>{{ page.title }}</span></li>
+      </ol>
+    </nav>
+    {% endif %}
+    {% endunless %}
+    <div  id="particles-js">
+      <div id="main-content" class="main-content" role="main" markdown="1">
+        <div id="main-greeting">
+          <div>
+            <h1 class="text-center">Welcome&nbsp;to the&nbsp;magic&nbsp;of&nbsp;data!</h1>
+
+            <p class="fs-6 fw-300 text-center">
+              Create unified batch and streaming&nbsp;data&nbsp;processing&nbsp;jobs<br/>
+              with <a href="https://kotlinlang.org/" target="_blank">Kotlin</a>
+              and <a href="https://beam.apache.org" target="_blank">Apache Beam</a>
+            </p>
+
+            <p class="text-center">
+              <a href="{{ '/documentation/get-started.html' | absolute_url }}" class="btn btn-purple mr-2">Get started now</a>
+              <a href="{{ '/documentation/' | absolute_url }}" class="btn">View documentation</a>
+            </p>
           </div>
-          <div class="js-search-results search-results-wrap"></div>
         </div>
-        {% endif %}
-        {% if site.aux_links != nil %}
-        <ul class="list-style-none text-small aux-nav">
-          {% for link in site.aux_links %}
-          <li class="d-inline-block my-0{% unless forloop.last %} mr-2{% endunless %}"><a href="{{ link.last }}">{{ link.first }}</a></li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-      </div>
-      <div class="page" id="particles-js">
-        <div id="main-content" class="page-content" role="main" markdown="1">
 
-          <h1 class="text-center">Welcome&nbsp;to the&nbsp;magic&nbsp;of&nbsp;data!</h1>
+        <hr/>
 
-          <p class="fs-6 fw-300 text-center">
-            Create unified batch and streaming&nbsp;data&nbsp;processing&nbsp;jobs<br />
-            with <a href="https://kotlinlang.org/" target="_blank">Kotlin</a>
-            and <a href="https://beam.apache.org" target="_blank">Apache Beam</a>
-          </p>
+        <p class="text-center">
+          <img src="{{ '/assets/images/site/pipeline.png' | absolute_url }}" width="500px"/>
+        </p>
 
-          <p class="text-center">
-            <a href="{{ '/documentation/get-started.html' | absolute_url }}" class="btn btn-purple mr-2">Get started now</a>
-            <a href="{{ '/documentation/' | absolute_url }}" class="btn">View documentation</a>
-          </p>
+        <hr/>
 
-          <hr />
+        <h2>Contribution</h2>
 
-          <p class="text-center">
-            <img src="{{ '/assets/images/site/pipeline.png' | absolute_url }}" width="500px" />
-          </p>
+        <p>
+          Kio is an open-source project, so any contributions are welcome! If you'd like to take a hand with it,
+          please see the <a href="{{ '/documentation/' | absolute_url }}#contribute">Contribute</a> section. Also, if you find a bug or have
+          any suggestions, submit an <a href="https://github.com/chermenin/kio/issues">issue</a>.
+        </p>
 
-          <hr />
+        <hr/>
 
-          <h2>Contribution</h2>
-
-          <p>
-            Kio is an open-source project, so any contributions are welcome! If you'd like to take a hand with it,
-            please see the <a href="/documentation/#contribute">Contribute</a> section. Also, if you find a bug or have
-            any suggestions, submit an <a href="https://github.com/chermenin/kio/issues">issue</a>.
-          </p>
-
-          <hr />
-
-          <p class="text-small">
-            Apache Beam, Apache, Beam, the Beam logo, and the Apache feather logo are either registered trademarks or
-            trademarks of The Apache Software Foundation. All other products or name brands are trademarks of their
-            respective holders, including The Apache Software Foundation.
-          </p>
+        <p class="text-small">
+          Apache Beam, Apache, Beam, the Beam logo, and the Apache feather logo are either registered trademarks or
+          trademarks of The Apache Software Foundation. All other products or name brands are trademarks of their
+          respective holders, including The Apache Software Foundation.
+        </p>
 
       </div>
-      </div>
-      <script src="http://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-      <script lang="text/javascript">
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  <script lang="text/javascript">
         window.onload = function() {
           particlesJS("particles-js", {
             "particles": {
@@ -170,9 +235,19 @@ nav_exclude: true
             "retina_detect": true
           });
         }
-      </script>
-    </div>
-  </div>
+  </script>
+
+  {% if site.search_enabled != false %}
+  {% if site.search.button %}
+  <a href="#" id="search-button" class="search-button">
+    <svg viewBox="0 0 24 24" class="icon">
+      <use xlink:href="#svg-search"></use>
+    </svg>
+  </a>
+  {% endif %}
+
+  <div class="search-overlay"></div>
+  {% endif %}
 </div>
 </body>
 </html>
