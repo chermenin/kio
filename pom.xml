@@ -20,7 +20,7 @@
 
     <groupId>ru.chermenin.kio</groupId>
     <artifactId>kio</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
 
     <name>kio</name>
     <description>Kotlin extensions for Apache Beam</description>
@@ -49,7 +49,7 @@
         <connection>scm:git:git://github.com/chermenin/kio.git</connection>
         <developerConnection>scm:git:git@github.com:chermenin/kio.git</developerConnection>
         <url>https://github.com/chermenin/kio</url>
-        <tag>0.1.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>

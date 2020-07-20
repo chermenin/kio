@@ -21,18 +21,18 @@
     <parent>
         <groupId>ru.chermenin.kio</groupId>
         <artifactId>kio</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>kio-connectors</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
             <groupId>ru.chermenin.kio</groupId>
             <artifactId>kio-core</artifactId>
-            <version>0.1.0</version>
+            <version>0.2.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

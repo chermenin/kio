@@ -21,24 +21,24 @@
     <parent>
         <groupId>ru.chermenin.kio</groupId>
         <artifactId>kio</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>kio-cep</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
             <groupId>ru.chermenin.kio</groupId>
             <artifactId>kio-core</artifactId>
-            <version>0.1.0</version>
+            <version>0.2.0-SNAPSHOT</version>
         </dependency>
 
         <!-- Test dependencies -->
         <dependency>
             <groupId>ru.chermenin.kio</groupId>
             <artifactId>kio-test</artifactId>
-            <version>0.1.0</version>
+            <version>0.2.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
