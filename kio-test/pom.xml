@@ -21,17 +21,17 @@
     <parent>
         <groupId>ru.chermenin.kio</groupId>
         <artifactId>kio</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
     </parent>
 
     <artifactId>kio-test</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 
     <dependencies>
         <dependency>
             <groupId>ru.chermenin.kio</groupId>
             <artifactId>kio-core</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
