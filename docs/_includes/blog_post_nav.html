@@ -1,0 +1,13 @@
+<nav role="navigation" aria-label="Main navigation">
+  <ul class="navigation-list">
+    <li class="navigation-list-item active">
+      <p class="navigation-list-link">Recent blog posts:</p>
+    </li>
+    {% for post in site.posts limit:5 %}
+    <li class="navigation-list-item {% if page.url == post.url %} active{% endif %}">
+      <a href="{{ post.url | absolute_url }}" class="navigation-list-link{% if page.url == post.url %} active{% endif %}">{{ post.title }}</a>
+      <span class="text-small text-grey-dk-000">{{ post.date | date: "%B %d, %Y" }} by {{ post.author }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>

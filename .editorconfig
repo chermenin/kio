@@ -1,0 +1,18 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{kt, kts, xml, kt.spec, kts.spec}]
+indent_size = 4
+max_line_length = 120
+disabled_rules = no-wildcard-imports
+
+[{*.md,*.markdown}]
+trim_trailing_whitespace = false

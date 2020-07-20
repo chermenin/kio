@@ -1,0 +1,7 @@
+#particles-js > canvas {
+  position: absolute;
+  left: 0px;
+  top: 60px;
+  height: 290px !important;
+  z-index: -1;
+}

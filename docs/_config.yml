@@ -1,0 +1,23 @@
+title: Kio
+email: alex@chermenin.ru
+description: A set of Kotlin extensions for Apache Beam implementing fluent-like API for Java SDK.
+baseurl: "/kio/"
+url: "https://code.chermenin.ru"
+github_username: chermenin
+
+# Build settings
+theme: just-the-docs
+search_enabled: true
+search_tokenizer_separator: /[\s/]+/
+logo: "/assets/images/logos/kio_small_logo.png"
+permalink: /blog/:year/:month/:day/:title:output_ext
+
+aux_links:
+  "Documentation":
+    - "/kio/documentation/"
+  "Blog":
+    - "/kio/blog/"
+  "Kio on GitHub":
+    - "//github.com/chermenin/kio"
+
+footer_content: "Copyright &copy; 2020 <a href=\"https://code.chermenin.ru\">Alex Chermenin</a><br />Licensed under <a href=\"https://www.apache.org/licenses/LICENSE-2.0.txt\" target=\"_blank\">Apache 2.0</a>."
