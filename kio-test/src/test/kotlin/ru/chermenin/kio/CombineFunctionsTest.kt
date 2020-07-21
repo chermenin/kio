@@ -47,7 +47,10 @@ class CombineFunctionsTest : KioPipelineTest() {
             { acc1, acc2 -> acc1 + acc2 },
             coder = ListCoder.of(StringUtf8Coder.of())
         )
-        results.thatSingleton().satisfy { value -> assertTrue(value.containsAll((0..10).map { it.toString() })) }
+        results.thatSingleton().satisfy { value ->
+            assertEquals(11, value.size)
+            assertTrue(value.containsAll((0..10).map { it.toString() }))
+        }
         kio.execute()
     }
 
@@ -80,12 +83,16 @@ class CombineFunctionsTest : KioPipelineTest() {
     fun testAggregate() {
         val input = kio.parallelize(0..10)
         val results = input.aggregate(
-            "--",
-            { acc: String, elem: Int -> acc + elem.toString() },
-            { acc1, acc2 -> acc1 + acc2 }
+            emptyList(),
+            { acc: List<String>, elem: Int -> acc + elem.toString() },
+            { acc1, acc2 -> acc1 + acc2 },
+            coder = ListCoder.of(StringUtf8Coder.of())
         )
         results.thatSingleton().satisfy { value ->
-            assertTrue(value.toList().containsAll((0..10).joinToString(prefix = "--", separator = "").toList()))
+            assertArrayEquals(
+                (0..10).map { it.toString() }.sorted().toTypedArray(),
+                value.sorted().toTypedArray()
+            )
         }
         kio.execute()
     }
@@ -94,18 +101,23 @@ class CombineFunctionsTest : KioPipelineTest() {
     fun testAggregateByKey() {
         val input = kio.parallelize(0..10).keyBy { it % 2 }
         val results = input.aggregateByKey(
-            "--",
-            { acc: String, elem: Int -> acc + elem.toString() },
-            { acc1, acc2 -> acc1 + acc2 }
+            emptyList(),
+            { acc: List<String>, elem: Int -> acc + elem.toString() },
+            { acc1, acc2 -> acc1 + acc2 },
+            coder = ListCoder.of(StringUtf8Coder.of())
         )
         results.that().satisfy { values ->
             values.forEach { value ->
                 if (value.key == 0) {
-                    assertTrue(value.value.toList()
-                        .containsAll(listOf(0, 2, 4, 6, 8, 10).joinToString(prefix = "--", separator = "").toList()))
+                    assertArrayEquals(
+                        (0..5).map { (it * 2).toString() }.sorted().toTypedArray(),
+                        value.value.sorted().toTypedArray()
+                    )
                 } else {
-                    assertTrue(value.value.toList()
-                        .containsAll(listOf(1, 3, 5, 7, 9).joinToString(prefix = "--", separator = "").toList()))
+                    assertArrayEquals(
+                        (0..4).map { (it * 2 + 1).toString() }.sorted().toTypedArray(),
+                        value.value.sorted().toTypedArray()
+                    )
                 }
             }
         }
@@ -115,21 +127,23 @@ class CombineFunctionsTest : KioPipelineTest() {
     @Test
     fun testFold() {
         val input = kio.parallelize(1..5)
-        val results = input.fold(-1) { a, b -> a * b }
-        results.thatSingleton().satisfy { assertEquals(-120, it) }
+        val results = input.map { it.toString() }.fold("") { a, b -> a + b }
+        results.thatSingleton().satisfy {
+            assertEquals("12345", it.toList().sorted().joinToString(""))
+        }
         kio.execute()
     }
 
     @Test
     fun testFoldByKey() {
         val input = kio.parallelize(1..10).keyBy { it % 2 }
-        val results = input.foldByKey(-1) { a, b -> a * b }
+        val results = input.mapValues { it.toString() }.foldByKey("") { a, b -> a + b }
         results.that().satisfy { iterable ->
             iterable.forEach {
                 if (it.key == 0) {
-                    assertEquals(-3840, it.value)
+                    assertEquals("012468", it.value.toList().sorted().joinToString(""))
                 } else {
-                    assertEquals(-945, it.value)
+                    assertEquals("13579", it.value.toList().sorted().joinToString(""))
                 }
             }
         }
