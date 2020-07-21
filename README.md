@@ -3,6 +3,11 @@
 
 ---
 
+[![Build Status](https://travis-ci.org/chermenin/kio.svg?branch=master)](https://travis-ci.org/chermenin/kio)
+[![CodeFactor](https://www.codefactor.io/repository/github/chermenin/kio/badge)](https://www.codefactor.io/repository/github/chermenin/kio)
+[![codecov](https://codecov.io/gh/chermenin/kio/branch/master/graph/badge.svg)](https://codecov.io/gh/chermenin/kio)
+[![Maven Central](https://img.shields.io/maven-central/v/ru.chermenin.kio/kio-core.svg)](https://search.maven.org/search?q=g:ru.chermenin.kio)
+
 **Kio** is a set of Kotlin extensions for [Apache Beam](https://beam.apache.org) to implement fluent-like API for Java SDK.
 
 ## Quick Start
