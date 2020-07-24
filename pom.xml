@@ -53,6 +53,7 @@
     </scm>
 
     <modules>
+        <module>examples</module>
         <module>kio-core</module>
         <module>kio-test</module>
         <module>kio-cep</module>
