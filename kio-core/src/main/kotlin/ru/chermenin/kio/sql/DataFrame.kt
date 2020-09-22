@@ -17,8 +17,11 @@
 package ru.chermenin.kio.sql
 
 import org.apache.beam.sdk.schemas.transforms.*
-import org.apache.beam.sdk.values.*
-import ru.chermenin.kio.functions.*
+import org.apache.beam.sdk.values.PCollection
+import org.apache.beam.sdk.values.Row
+import ru.chermenin.kio.functions.forEach
+import ru.chermenin.kio.functions.take
+import ru.chermenin.kio.functions.union
 import ru.chermenin.kio.utils.hashWithName
 
 typealias Dataset<T> = PCollection<T>
@@ -28,6 +31,13 @@ private fun Row.toString(truncate: Boolean): String {
 
     // @todo: change to truncated row strings
     return this.toString()
+}
+
+/**
+ * Prints the schema to the console.
+ */
+fun DataFrame.printSchema() {
+    println(this.schema.toString())
 }
 
 /**
@@ -54,12 +64,35 @@ fun DataFrame.show(numRows: Int) {
     this.show(numRows, truncate = true)
 }
 
-fun DataFrame.show(): Unit {
+fun DataFrame.show() {
     this.show(20)
 }
 
-fun DataFrame.show(truncate: Boolean): Unit {
+fun DataFrame.show(truncate: Boolean) {
     this.show(20, truncate)
+}
+
+fun DataFrame.join(right: DataFrame, vararg usingColumns: String): DataFrame {
+    val joiner = Join.innerJoin<Row, Row>(right).using(*usingColumns)
+    return this.apply(joiner.hashWithName("join($right, $usingColumns)"), joiner)
+}
+
+fun DataFrame.join(right: DataFrame, joinType: String, vararg usingColumns: String): DataFrame {
+    val joiner = when (joinType.toLowerCase().replace("_", "")) {
+        "inner" -> Join.innerJoin<Row, Row>(right)
+        "outer", "full", "fullouter" -> Join.fullOuterJoin(right)
+        "leftouter", "left" -> Join.leftOuterJoin(right)
+        "rightouter", "right" -> Join.rightOuterJoin(right)
+        else -> {
+            val supported = listOf("inner", "outer", "full", "fullouter", "leftouter", "left", "rightouter", "right")
+            throw IllegalArgumentException(
+                "Unsupported join type '$joinType'. Supported types: ${
+                    supported.joinToString("', '", "'", "'")
+                }."
+            )
+        }
+    }.using(*usingColumns)
+    return this.apply(joiner.hashWithName("join($right, $usingColumns)"), joiner)
 }
 
 fun DataFrame.select(vararg cols: String): DataFrame {
@@ -76,8 +109,16 @@ fun DataFrame.where(conditionExpr: String): DataFrame {
     return this.filter(conditionExpr)
 }
 
+fun DataFrame.groupBy(vararg cols: String): DataFrame {
+    return this.apply(cols.hashWithName("groupBy(${cols.joinToString()})"), Group.byFieldNames(*cols))
+}
+
 fun DataFrame.limit(n: Int): DataFrame {
     return this.take(n.toLong())
+}
+
+fun DataFrame.unionAll(other: DataFrame): DataFrame {
+    return this.union(other)
 }
 
 fun DataFrame.withColumnRenamed(existingName: String, newName: String): DataFrame {
