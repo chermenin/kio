@@ -5,7 +5,9 @@
   {% for post in site.posts limit:5 %}
     <li class="nav-list-item {% if page.url == post.url %} active{% endif %}">
       <a href="{{ post.url | absolute_url }}" class="nav-list-link{% if page.url == post.url %} active{% endif %}">{{ post.title }}<br />
-      <span class="text-small text-grey-dk-000">{{ post.date | date: "%B %d, %Y" }} by {{ post.author }}</span></a>
+        <div class="text-small text-grey-dk-000">posted {{ post.date | date: "%B %d, %Y" }}</div>
+        <div class="text-small text-grey-dk-000">by {{ post.author }}</div>
+      </a>
     </li>
   {% endfor %}
 </ul>
