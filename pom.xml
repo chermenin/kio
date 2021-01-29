@@ -67,8 +67,8 @@
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
 
         <!-- Versions -->
-        <kotlin.version>1.4.10</kotlin.version>
-        <beam.version>2.25.0</beam.version>
+        <kotlin.version>1.4.21</kotlin.version>
+        <beam.version>2.27.0</beam.version>
     </properties>
 
     <dependencies>
