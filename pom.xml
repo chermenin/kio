@@ -68,7 +68,7 @@
 
         <!-- Versions -->
         <kotlin.version>1.4.21</kotlin.version>
-        <beam.version>2.27.0</beam.version>
+        <beam.version>2.28.0</beam.version>
     </properties>
 
     <dependencies>
