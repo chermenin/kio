@@ -67,8 +67,8 @@
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
 
         <!-- Versions -->
-        <kotlin.version>1.4.10</kotlin.version>
-        <beam.version>2.24.0</beam.version>
+        <kotlin.version>1.4.21</kotlin.version>
+        <beam.version>2.28.0</beam.version>
     </properties>
 
     <dependencies>
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>

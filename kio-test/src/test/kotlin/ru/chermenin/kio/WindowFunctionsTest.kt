@@ -69,7 +69,7 @@ class WindowFunctionsTest : KioPipelineTest() {
             .withTimestamps { Instant.ofEpochMilli((it[0] - 'a').toLong()) }
         val results = input.withSlidingWindow(Duration.millis(3), Duration.millis(2)).top(10)
         results.that().satisfy { iterable ->
-            val resultsList = iterable.toList().map { it.sorted() }.sortedBy { it[0] }
+            val resultsList = iterable.toList().map { it.sorted() }.sortedBy { it[0] + it.size }
             assertEquals(
                 listOf(
                     listOf("a"),
