@@ -16,11 +16,13 @@
 
 package ru.chermenin.kio.sql
 
+import org.apache.beam.sdk.schemas.Schema
 import org.apache.beam.sdk.schemas.transforms.*
 import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.Row
 import ru.chermenin.kio.functions.forEach
 import ru.chermenin.kio.functions.take
+import ru.chermenin.kio.functions.toRows
 import ru.chermenin.kio.functions.union
 import ru.chermenin.kio.utils.hashWithName
 
@@ -28,10 +30,16 @@ typealias Dataset<T> = PCollection<T>
 typealias DataFrame = Dataset<Row>
 
 private fun Row.toString(truncate: Boolean): String {
-
-    // @todo: change to truncated row strings
-    return this.toString()
+    return this.values.toTypedArray().contentDeepToString().let {
+        if (truncate && it.length > 60) {
+            it.take(60) + "..."
+        } else {
+            it
+        }
+    }
 }
+
+inline fun <reified T : Any> PCollection<T>.toDF(): DataFrame = this.toRows()
 
 /**
  * Prints the schema to the console.
@@ -119,6 +127,20 @@ fun DataFrame.limit(n: Int): DataFrame {
 
 fun DataFrame.unionAll(other: DataFrame): DataFrame {
     return this.union(other)
+}
+
+fun DataFrame.withColumn(name: String, type: Schema.FieldType): DataFrame {
+    return this.apply(
+        name.hashWithName("withColumn($name, $type)"),
+        AddFields.create<Row>().field(name, type)
+    )
+}
+
+fun DataFrame.withColumn(name: String, type: Schema.FieldType, defaultValue: Any): DataFrame {
+    return this.apply(
+        name.hashWithName("withColumn($name, $type, $defaultValue)"),
+        AddFields.create<Row>().field(name, type, defaultValue)
+    )
 }
 
 fun DataFrame.withColumnRenamed(existingName: String, newName: String): DataFrame {
