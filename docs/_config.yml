@@ -27,6 +27,8 @@ gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into t
 aux_links:
   "Documentation":
     - "/kio/documentation/"
+  "Community":
+    - "/kio/community/"
   "Blog":
     - "/kio/blog/"
   "Kio on GitHub":
