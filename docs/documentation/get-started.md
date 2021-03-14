@@ -133,4 +133,4 @@ kotlin: 17
 ## What's next
 
 Learn more about Kio viewing the [Developers Guide](guide)
-and feel free to [help us]({{ '/documentation/' | absolute_url }}#contribute) with the project.
+and feel free to [help us]({{ '/community/' | absolute_url }}) with the project.
