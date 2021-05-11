@@ -37,7 +37,7 @@ import ru.chermenin.kio.cep.pattern.Pattern
 class MatchValueDoFn<K, V : Serializable>(private val pattern: Pattern<V>) : DoFn<KV<K, V>, KV<K, ComplexEvent<V>>>() {
 
     @StateId(NFA_STATE_KEY)
-    val nfaState: StateSpec<ValueState<NFA<*>>>? = StateSpecs.value(SerializableCoder.of(NFA::class.java))
+    val nfaState: StateSpec<ValueState<NFA<*>>> = StateSpecs.value(SerializableCoder.of(NFA::class.java))
 
     @Suppress("UNCHECKED_CAST")
     @ProcessElement

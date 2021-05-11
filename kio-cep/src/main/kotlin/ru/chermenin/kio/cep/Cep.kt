@@ -77,12 +77,12 @@ inline fun <reified K : Serializable, reified V : Serializable> PCollection<KV<K
     return if (allowedLateness == Duration.ZERO) {
         this.apply(
             pattern.hashWithName("CEP.matchValues($pattern)"),
-            CEP.matchValues<K, V>(pattern)
+            CEP.matchValues(pattern)
         )
     } else {
         this.apply(
             pattern.hashWithName("CEP.lateMatchValues($pattern, $allowedLateness)"),
-            CEP.lateMatchValues<K, V>(pattern, allowedLateness, K::class.java, V::class.java)
+            CEP.lateMatchValues(pattern, allowedLateness, K::class.java, V::class.java)
         )
     }
 }
@@ -106,7 +106,7 @@ object CEP {
         keyClass: Class<K>,
         valueClass: Class<V>
     ): PTransform<PCollection<KV<K, V>>, PCollection<KV<K, ComplexEvent<V>>>> {
-        return ParDo.of(LateMatchValueDoFn<K, V>(pattern, allowedLateness.millis, keyClass, valueClass))
+        return ParDo.of(LateMatchValueDoFn(pattern, allowedLateness.millis, keyClass, valueClass))
             as PTransform<PCollection<KV<K, V>>, PCollection<KV<K, ComplexEvent<V>>>>
     }
 }
