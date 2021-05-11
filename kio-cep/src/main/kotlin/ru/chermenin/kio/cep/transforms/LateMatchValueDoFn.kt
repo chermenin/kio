@@ -46,7 +46,7 @@ class LateMatchValueDoFn<K : Serializable, V : Serializable>(
 ) : DoFn<KV<K, V>, KV<K, ComplexEvent<V>>>() {
 
     @StateId(NFA_STATE_KEY)
-    val nfaState: StateSpec<ValueState<NFA<*>>>? = StateSpecs.value(SerializableCoder.of(NFA::class.java))
+    val nfaState: StateSpec<ValueState<NFA<*>>> = StateSpecs.value(SerializableCoder.of(NFA::class.java))
 
     @StateId(BUFFER_STATE_KEY)
     val bufferState: StateSpec<BagState<KV<Long, KV<K, V>>>> = StateSpecs.bag(
@@ -74,7 +74,7 @@ class LateMatchValueDoFn<K : Serializable, V : Serializable>(
         bufferState.clear()
 
         val element = context.element()
-        val maxTimestamp = bufferedEvents.map { it.key!! }.max() ?: context.timestamp().millis
+        val maxTimestamp = bufferedEvents.map { it.key!! }.maxOrNull() ?: context.timestamp().millis
         val expireTimestamp = maxTimestamp - allowedLateness
         val (expiredEvents, bufferEvents) = bufferedEvents.partition { it.key!! <= expireTimestamp }
         bufferEvents.forEach { bufferState.add(it) }

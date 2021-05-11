@@ -104,7 +104,7 @@ class NFA<T> internal constructor(
         var currentState: InternalState<T>? = internalState
         do {
             val patternName = currentState!!.currentState.name
-            val events = results.getOrElse(patternName, { listOf() })
+            val events = results.getOrElse(patternName) { listOf() }
             results[patternName] = events + currentState.event
             currentState = currentState.parent
         } while (currentState != null)
