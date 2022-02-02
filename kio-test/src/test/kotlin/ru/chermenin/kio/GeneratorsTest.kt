@@ -17,7 +17,7 @@
 package ru.chermenin.kio
 
 import org.joda.time.Duration
-import org.junit.Assert
+import org.junit.Assert.*
 import org.junit.Test
 import ru.chermenin.kio.functions.*
 import ru.chermenin.kio.test.*
@@ -43,12 +43,8 @@ class GeneratorsTest : KioPipelineTest() {
             .count()
         results.that().satisfy { resultList ->
             val restList = resultList.filter { it != 20L }.sorted().toMutableList()
-            while (restList.isNotEmpty() && restList.size % 2 == 0) {
-                val a = restList.removeFirst()
-                val b = restList.removeFirst()
-                if ((a + b) % 20L != 0L) {
-                    Assert.fail("Strange pair of values: $a and $b")
-                }
+            if (restList.isNotEmpty() && restList.size % 2 == 0) {
+                assertTrue(restList.sum() % 20L == 0L)
             }
         }
         kio.execute()

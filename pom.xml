@@ -235,6 +235,7 @@
                         <exclude>CHANGELOG.md</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
                         <exclude>CONTRIBUTORS.md</exclude>
+                        <exclude>codecov.yml</exclude>
                         <!-- IDE files -->
                         <exclude>**/.idea/**</exclude>
                         <exclude>**/*.iml</exclude>
