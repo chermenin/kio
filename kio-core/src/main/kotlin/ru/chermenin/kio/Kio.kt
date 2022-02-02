@@ -22,6 +22,7 @@ import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.PipelineResult
 import org.apache.beam.sdk.coders.Coder
 import org.apache.beam.sdk.io.FileSystems
+import org.apache.beam.sdk.io.GenerateSequence
 import org.apache.beam.sdk.options.PipelineOptions
 import org.apache.beam.sdk.transforms.Create
 import org.apache.beam.sdk.values.PCollection
@@ -112,7 +113,34 @@ class Kio private constructor(private val pipeline: Pipeline, val arguments: Arg
         val generator = Create.of(elements).let {
             if (coder != null) it.withCoder(coder) else it
         }
-        return pipeline.apply(if (name.isEmpty()) generator.hashWithName("parallelize") else name, generator)
+        return pipeline.apply(name.ifEmpty { generator.hashWithName("parallelize") }, generator)
+    }
+
+    /**
+     * Generate a bounded or unbounded collection of numbers with defined rate.
+     *
+     * @param from inclusive first element of the sequence (optional, default is 0)
+     * @param to exclusive end of the sequence (optional, the collection will be unbounded if it's null)
+     * @param rate pair with the number of elements per period and the period for that (optional)
+     * @param maxReadTime timeout to finish the collection generating (optional)
+     * @param name operator name (optional)
+     * @return collection of long values
+     */
+    fun generate(
+        from: Long = 0,
+        to: Long? = null,
+        rate: Pair<Long, Duration>? = null,
+        maxReadTime: Duration? = null,
+        name: String = ""
+    ): PCollection<Long> {
+        val generator = GenerateSequence.from(from).let {
+            if (to != null) it.to(to) else it
+        }.let {
+            if (rate != null) it.withRate(rate.first, rate.second) else it
+        }.let {
+            if (maxReadTime != null) it.withMaxReadTime(maxReadTime) else it
+        }
+        return pipeline.apply(name.ifEmpty { generator.hashWithName("generate") }, generator)
     }
 
     /**

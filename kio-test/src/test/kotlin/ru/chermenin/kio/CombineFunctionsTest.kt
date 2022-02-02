@@ -23,6 +23,7 @@ import kotlin.math.sin
 import org.apache.beam.sdk.coders.ListCoder
 import org.apache.beam.sdk.coders.StringUtf8Coder
 import org.apache.beam.sdk.values.KV
+import org.joda.time.Duration
 import org.joda.time.Instant
 import org.junit.Assert.*
 import org.junit.Test
@@ -68,11 +69,11 @@ class CombineFunctionsTest : KioPipelineTest() {
                 if (it.key == 0) {
                     val values0 = listOf("0", "2", "4", "6", "8", "10")
                     assertTrue(it.value.subtract(values0).isEmpty())
-                    assertTrue(values0.subtract(it.value).isEmpty())
+                    assertTrue(values0.subtract(it.value.toSet()).isEmpty())
                 } else {
                     val values1 = listOf("1", "3", "5", "7", "9")
                     assertTrue(it.value.subtract(values1).isEmpty())
-                    assertTrue(values1.subtract(it.value).isEmpty())
+                    assertTrue(values1.subtract(it.value.toSet()).isEmpty())
                 }
             }
         }
@@ -321,7 +322,7 @@ class CombineFunctionsTest : KioPipelineTest() {
             iterable.forEach {
                 val resultList = it.value.toList()
                 assertEquals(10, resultList.size)
-                val checkRange = (it.key!! * 10)..(it.key!! * 10 + 9)
+                val checkRange = (it.key * 10)..(it.key * 10 + 9)
                 assertTrue(resultList.containsAll(checkRange.toList()))
             }
         }
@@ -338,7 +339,7 @@ class CombineFunctionsTest : KioPipelineTest() {
             iterable.forEach {
                 val resultList = it.value.toList()
                 assertEquals(10, resultList.size)
-                val checkRange = (it.key!!.id * 10)..(it.key!!.id * 10 + 9)
+                val checkRange = (it.key.id * 10)..(it.key.id * 10 + 9)
                 assertTrue(resultList.containsAll(checkRange.toList()))
             }
         }
@@ -360,16 +361,31 @@ class CombineFunctionsTest : KioPipelineTest() {
     @Test
     fun testLatest() {
         val input = kio.parallelize("hello world".toCharArray().asIterable())
-        val results = input.withTimestamps { Instant.ofEpochSecond(it.toLong()) }.latest()
+        val results = input.withTimestamps { Instant.ofEpochSecond(it.code.toLong()) }.latest()
         results.thatSingleton().isEqualTo('w')
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedLatest() {
+        val input = kio.generate(
+            from = 0,
+            to = 10,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2))
+        input.latest().that().satisfy {
+            println(it)
+            assertTrue(it.count() >= 3)
+            assertTrue(it.contains(9L))
+        }
         kio.execute()
     }
 
     @Test
     fun testLatestByKey() {
         val input = kio.parallelize("hello world".toCharArray().asIterable())
-            .withTimestamps { Instant.ofEpochSecond(it.toLong()) }
-            .keyBy { it.toInt() % 3 }
+            .withTimestamps { Instant.ofEpochSecond(it.code.toLong()) }
+            .keyBy { it.code % 3 }
         val results = input.latestByKey()
         results.that().satisfy { iterable ->
             iterable.forEach {
@@ -392,8 +408,26 @@ class CombineFunctionsTest : KioPipelineTest() {
     }
 
     @Test
+    fun testWindowedMinMax() {
+        val input = kio.generate(
+            from = 0,
+            to = 10,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2))
+        input.max().that().satisfy {
+            assertTrue(it.count() >= 3)
+            assertTrue(it.contains(9L))
+        }
+        input.min().that().satisfy {
+            assertTrue(it.count() >= 3)
+            assertTrue(it.contains(0L))
+        }
+        kio.execute()
+    }
+
+    @Test
     fun testMinMaxByKey() {
-        val input = kio.parallelize("Hello, World!".toCharArray().asIterable()).keyBy { it.toInt() % 2 }
+        val input = kio.parallelize("Hello, World!".toCharArray().asIterable()).keyBy { it.code % 2 }
         input.maxByKey().that().satisfy { iterable ->
             iterable.forEach {
                 when (it.key) {
@@ -408,6 +442,32 @@ class CombineFunctionsTest : KioPipelineTest() {
                     0 -> assertEquals(' ', it.value)
                     1 -> assertEquals('!', it.value)
                 }
+            }
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedMinMaxByKey() {
+        val input = kio.generate(
+            from = 0,
+            to = 20,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2)).keyBy { it % 2 }
+        input.maxByKey().that().satisfy { iterable ->
+            iterable.partition { it.key == 0L }.let { pair ->
+                assertTrue(pair.first.count() >= 5)
+                assertTrue(pair.first.map { it.value }.contains(18L))
+                assertTrue(pair.second.count() >= 5)
+                assertTrue(pair.second.map { it.value }.contains(19L))
+            }
+        }
+        input.minByKey().that().satisfy { iterable ->
+            iterable.partition { it.key == 0L }.let { pair ->
+                assertTrue(pair.first.count() >= 5)
+                assertTrue(pair.first.map { it.value }.contains(0L))
+                assertTrue(pair.second.count() >= 5)
+                assertTrue(pair.second.map { it.value }.contains(1L))
             }
         }
         kio.execute()
@@ -430,6 +490,23 @@ class CombineFunctionsTest : KioPipelineTest() {
         val doubles = kio.parallelize(listOf(1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0))
         doubles.mean().thatSingleton().satisfy {
             assertEquals(0.361111111, it, delta)
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedMean() {
+        val input = kio.generate(
+            from = 0,
+            to = 10,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2))
+        input.mean().that().satisfy {
+            val results = it.toList().sorted()
+            assertTrue(results.count() >= 3)
+            assertTrue(results[0] in 0.0..1.5)
+            assertTrue(results[1] in 2.5..5.5)
+            assertTrue(results[2] in 6.5..8.5)
         }
         kio.execute()
     }
@@ -463,18 +540,48 @@ class CombineFunctionsTest : KioPipelineTest() {
                 }
             }
         }
-        val doubles = kio.parallelize(listOf(
-            KV.of("a", 1.0 / 2.0),
-            KV.of("b", 1.0 / 3.0),
-            KV.of("a", 1.0 / 4.0),
-            KV.of("b", 1.0 / 5.0)
-        ))
+        val doubles = kio.parallelize(
+            listOf(
+                KV.of("a", 1.0 / 2.0),
+                KV.of("b", 1.0 / 3.0),
+                KV.of("a", 1.0 / 4.0),
+                KV.of("b", 1.0 / 5.0)
+            )
+        )
         doubles.meanByKey().that().satisfy { iterable ->
             iterable.forEach {
                 when (it.key) {
                     "a" -> assertEquals(0.375, it.value, delta)
                     "b" -> assertEquals(0.266666666, it.value, delta)
                 }
+            }
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedMeanByKey() {
+        val input = kio.generate(
+            from = 0,
+            to = 20,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2)).keyBy { it % 2 }
+        input.meanByKey().that().satisfy { iterable ->
+            iterable.partition { it.key == 0L }.let { pair ->
+                assertTrue(pair.first.count() >= 5)
+                val firstResults = pair.first.map { it.value }.sorted()
+                assertTrue(firstResults[0] in 0.0..1.0)
+                assertTrue(firstResults[1] in 3.0..5.0)
+                assertTrue(firstResults[2] in 7.0..11.0)
+                assertTrue(firstResults[3] in 11.0..13.0)
+                assertTrue(firstResults[4] in 15.0..17.0)
+                assertTrue(pair.second.count() >= 5)
+                val secondResults = pair.second.map { it.value }.sorted()
+                assertTrue(secondResults[0] in 1.0..2.0)
+                assertTrue(secondResults[1] in 4.0..6.0)
+                assertTrue(secondResults[2] in 8.0..12.0)
+                assertTrue(secondResults[3] in 12.0..14.0)
+                assertTrue(secondResults[4] in 16.0..18.0)
             }
         }
         kio.execute()
@@ -493,6 +600,23 @@ class CombineFunctionsTest : KioPipelineTest() {
         val doubles = kio.parallelize(listOf(1.0 / 2.0, 1.0 / 3.0, 1.0 / 4.0))
         doubles.sum().thatSingleton().satisfy {
             assertEquals(1.083333333, it, delta)
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedSum() {
+        val input = kio.generate(
+            from = 0,
+            to = 10,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2))
+        input.sum().that().satisfy {
+            val results = it.toList().sorted()
+            assertTrue(results.count() >= 3)
+            assertTrue(results[0] in 0..6)
+            assertTrue(results[1] in 10..22)
+            assertTrue(results[2] in 17..30)
         }
         kio.execute()
     }
@@ -526,12 +650,14 @@ class CombineFunctionsTest : KioPipelineTest() {
                 }
             }
         }
-        val doubles = kio.parallelize(listOf(
-            KV.of("a", 1.0 / 2.0),
-            KV.of("b", 1.0 / 3.0),
-            KV.of("a", 1.0 / 4.0),
-            KV.of("b", 1.0 / 5.0)
-        ))
+        val doubles = kio.parallelize(
+            listOf(
+                KV.of("a", 1.0 / 2.0),
+                KV.of("b", 1.0 / 3.0),
+                KV.of("a", 1.0 / 4.0),
+                KV.of("b", 1.0 / 5.0)
+            )
+        )
         doubles.sumByKey().that().satisfy { iterable ->
             iterable.forEach {
                 when (it.key) {
@@ -539,6 +665,46 @@ class CombineFunctionsTest : KioPipelineTest() {
                     "b" -> assertEquals(0.533333333, it.value, delta)
                 }
             }
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testTop() {
+        val input = kio.parallelize(0..9)
+        input.top(4).thatSingleton().satisfy {
+            assertEquals(4, it.size)
+            assertTrue(it.containsAll(listOf(9, 8, 7, 6)))
+        }
+        input.largest(3).thatSingleton().satisfy {
+            assertEquals(3, it.size)
+            assertTrue(it.containsAll(listOf(9, 8, 7)))
+        }
+        input.smallest(3).thatSingleton().satisfy {
+            assertEquals(3, it.size)
+            assertTrue(it.containsAll(listOf(0, 1, 2)))
+        }
+        kio.execute()
+    }
+
+    @Test
+    fun testWindowedTop() {
+        val input = kio.generate(
+            from = 0,
+            to = 10,
+            rate = 2L to Duration.standardSeconds(1)
+        ).withFixedWindow(Duration.standardSeconds(2))
+        input.top(2).that().satisfy { iterable ->
+            val results = iterable.toList().map { it.sorted() }.sortedBy { it.first() }
+            assertTrue(results.count() >= 3)
+            assertTrue(results.all { it.size <= 2 })
+            assertTrue(results.last().contains(9L))
+        }
+        input.smallest(2).that().satisfy { iterable ->
+            val results = iterable.toList().map { it.sorted() }.sortedBy { it.first() }
+            assertTrue(results.count() >= 3)
+            assertTrue(results.all { it.size <= 2 })
+            assertTrue(results.first().contains(0L))
         }
         kio.execute()
     }

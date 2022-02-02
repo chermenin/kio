@@ -145,16 +145,6 @@ class TransformFunctionsTest : KioPipelineTest() {
     }
 
     @Test
-    fun testTop() {
-        val input = kio.parallelize(0..9)
-        input.top(4).thatSingleton().satisfy {
-            assertEquals(4, it.size)
-            assertTrue(it.containsAll(listOf(9, 8, 7, 6)))
-        }
-        kio.execute()
-    }
-
-    @Test
     fun testUnion() {
         val input1 = kio.parallelize(0..4)
         val input2 = kio.parallelize(5..9)

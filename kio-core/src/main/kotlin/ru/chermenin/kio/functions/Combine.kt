@@ -17,11 +17,11 @@
 package ru.chermenin.kio.functions
 
 import com.twitter.chill.ClosureCleaner
-import java.io.Serializable
 import org.apache.beam.sdk.coders.*
 import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.join.CoGroupByKey
 import org.apache.beam.sdk.transforms.join.KeyedPCollectionTuple
+import org.apache.beam.sdk.transforms.windowing.GlobalWindows
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.TupleTag
@@ -283,7 +283,11 @@ inline fun <K, V> PCollection<KV<K, V>>.countApproxDistinctByKey(sampleSize: Int
 }
 
 inline fun <T> PCollection<T>.count(): PCollection<Long> {
-    val counter = Count.globally<T>()
+    val counter = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Count.globally<T>()
+    } else {
+        Combine.globally<T, Long>(Count.combineFn()).withoutDefaults()
+    }
     return this.apply(counter.hashWithName("count"), counter)
 }
 
@@ -325,8 +329,12 @@ inline fun <reified T> PCollection<T>.intersection(other: PCollection<T>): PColl
 }
 
 inline fun <T> PCollection<T>.latest(): PCollection<T> {
-    val combiner = Latest.globally<T>()
-    return this.apply(combiner.hashWithName("latest"), combiner)
+    val combiner = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Combine.globally(Latest.combineFn<T>())
+    } else {
+        Combine.globally(Latest.combineFn<T>()).withoutDefaults()
+    }
+    return this.asTimestamped().apply(combiner.hashWithName("latest"), combiner)
 }
 
 inline fun <K, V> PCollection<KV<K, V>>.latestByKey(): PCollection<KV<K, V>> {
@@ -335,7 +343,11 @@ inline fun <K, V> PCollection<KV<K, V>>.latestByKey(): PCollection<KV<K, V>> {
 }
 
 inline fun <T : Comparable<T>> PCollection<T>.max(): PCollection<T> {
-    val combiner = Max.globally<T>()
+    val combiner = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Max.globally()
+    } else {
+        Combine.globally(Max.naturalOrder<T>()).withoutDefaults()
+    }
     return this.apply(combiner.hashWithName("max"), combiner)
 }
 
@@ -345,7 +357,11 @@ inline fun <K, V : Comparable<V>> PCollection<KV<K, V>>.maxByKey(): PCollection<
 }
 
 inline fun <T : Number> PCollection<T>.mean(): PCollection<Double> {
-    val combiner = Mean.globally<T>()
+    val combiner = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Mean.globally()
+    } else {
+        Combine.globally(Mean.of<T>()).withoutDefaults()
+    }
     return this.apply(combiner.hashWithName("mean"), combiner)
 }
 
@@ -355,13 +371,22 @@ inline fun <K, V : Number> PCollection<KV<K, V>>.meanByKey(): PCollection<KV<K, 
 }
 
 inline fun <T : Comparable<T>> PCollection<T>.min(): PCollection<T> {
-    val combiner = Min.globally<T>()
+    val combiner = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Min.globally()
+    } else {
+        Combine.globally(Min.naturalOrder<T>()).withoutDefaults()
+    }
     return this.apply(combiner.hashWithName("min"), combiner)
 }
 
 inline fun <K, V : Comparable<V>> PCollection<KV<K, V>>.minByKey(): PCollection<KV<K, V>> {
     val combiner = Min.perKey<K, V>()
     return this.apply(combiner.hashWithName("minByKey"), combiner)
+}
+
+inline fun <T> PCollection<T>.sample(sampleSize: Int): PCollection<Iterable<T>> {
+    val sampler = Sample.fixedSizeGlobally<T>(sampleSize)
+    return this.apply(sampler.hashWithName("sample($sampleSize)"), sampler)
 }
 
 inline fun <K, V> PCollection<KV<K, V>>.sampleByKey(sampleSize: Int): PCollection<KV<K, Iterable<V>>> {
@@ -404,7 +429,11 @@ inline fun <reified K, reified V, reified X> PCollection<KV<K, V>>.subtractByKey
 
 @JvmName("sumFloats")
 inline fun PCollection<Float>.sum(): PCollection<Float> {
-    val adder = Sum.doublesGlobally()
+    val adder = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Sum.doublesGlobally()
+    } else {
+        Combine.globally(Sum.ofDoubles()).withoutDefaults()
+    }
     return this
         .map { it.toDouble() }
         .apply(adder.hashWithName("sum"), adder)
@@ -422,7 +451,11 @@ inline fun <K> PCollection<KV<K, Float>>.sumByKey(): PCollection<KV<K, Float>> {
 
 @JvmName("sumDouble")
 inline fun PCollection<Double>.sum(): PCollection<Double> {
-    val adder = Sum.doublesGlobally()
+    val adder = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Sum.doublesGlobally()
+    } else {
+        Combine.globally(Sum.ofDoubles()).withoutDefaults()
+    }
     return this.apply(adder.hashWithName("sum"), adder)
 }
 
@@ -434,7 +467,11 @@ inline fun <K> PCollection<KV<K, Double>>.sumByKey(): PCollection<KV<K, Double>>
 
 @JvmName("sumInt")
 inline fun PCollection<Int>.sum(): PCollection<Int> {
-    val adder = Sum.integersGlobally()
+    val adder = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Sum.integersGlobally()
+    } else {
+        Combine.globally(Sum.ofIntegers()).withoutDefaults()
+    }
     return this.apply(adder.hashWithName("sum"), adder)
 }
 
@@ -446,7 +483,11 @@ inline fun <K> PCollection<KV<K, Int>>.sumByKey(): PCollection<KV<K, Int>> {
 
 @JvmName("sumLong")
 inline fun PCollection<Long>.sum(): PCollection<Long> {
-    val adder = Sum.longsGlobally()
+    val adder = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Sum.longsGlobally()
+    } else {
+        Combine.globally(Sum.ofLongs()).withoutDefaults()
+    }
     return this.apply(adder.hashWithName("sum"), adder)
 }
 
@@ -456,17 +497,38 @@ inline fun <K> PCollection<KV<K, Long>>.sumByKey(): PCollection<KV<K, Long>> {
     return this.apply(adder.hashWithName("sum"), adder)
 }
 
+inline fun <T : Comparable<T>> PCollection<T>.top(count: Int): PCollection<List<T>> {
+    val topFunction = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Top.largest(count)
+    } else {
+        Combine.globally(Top.largestFn<T>(count)).withoutDefaults()
+    }
+    return this.apply(topFunction.hashWithName("top($count)"), topFunction)
+}
+
 inline fun <K, V : Comparable<V>> PCollection<KV<K, V>>.topByKey(count: Int): PCollection<KV<K, List<V>>> {
-    val topFunction = Top.perKey<K, V, ValuesComparator<V>>(count, ValuesComparator())
+    val topFunction = Top.largestPerKey<K, V>(count)
     return this.apply(topFunction.hashWithName("topByKey($count)"), topFunction)
 }
 
-/**
- * Class defines serializable comparator for values.
- */
-class ValuesComparator<V : Comparable<V>> : Comparator<V>, Serializable {
+inline fun <T : Comparable<T>> PCollection<T>.largest(count: Int): PCollection<List<T>> {
+    return this.top(count)
+}
 
-    override fun compare(a: V, b: V): Int {
-        return a.compareTo(b)
+inline fun <K, V : Comparable<V>> PCollection<KV<K, V>>.largestByKey(count: Int): PCollection<KV<K, List<V>>> {
+    return this.topByKey(count)
+}
+
+inline fun <T : Comparable<T>> PCollection<T>.smallest(count: Int): PCollection<List<T>> {
+    val topFunction = if (this.windowingStrategy.windowFn is GlobalWindows) {
+        Top.smallest(count)
+    } else {
+        Combine.globally(Top.smallestFn<T>(count)).withoutDefaults()
     }
+    return this.apply(topFunction.hashWithName("top($count)"), topFunction)
+}
+
+inline fun <K, V : Comparable<V>> PCollection<KV<K, V>>.smallestByKey(count: Int): PCollection<KV<K, List<V>>> {
+    val topFunction = Top.smallestPerKey<K, V>(count)
+    return this.apply(topFunction.hashWithName("topByKey($count)"), topFunction)
 }
