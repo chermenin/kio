@@ -184,11 +184,6 @@ inline fun <T> PCollection<T>.peek(noinline f: (T) -> Unit): PCollection<T> {
     ))
 }
 
-inline fun <T> PCollection<T>.sample(sampleSize: Int): PCollection<Iterable<T>> {
-    val sampler = Sample.fixedSizeGlobally<T>(sampleSize)
-    return this.apply(sampler.hashWithName("sample($sampleSize)"), sampler)
-}
-
 @Suppress("UNCHECKED_CAST")
 inline fun <reified K, reified V> PCollection<KV<K, V>>.swap(): PCollection<KV<V, K>> {
     val pairValueCoders = this.coder.coderArguments
@@ -217,11 +212,6 @@ inline fun <K, V> PCollection<Pair<K, V>>.toKV(): PCollection<KV<K, V>> {
         .map(mapper)
         .setName(mapper.hashWithName("toKV"))
         .setCoder(KvCoder.of(pairValueCoders[0] as Coder<K>, pairValueCoders[1] as Coder<V>))
-}
-
-inline fun <T : Comparable<T>> PCollection<T>.top(count: Int): PCollection<List<T>> {
-    val topFunction = Top.of(count, ValuesComparator<T>()).withoutDefaults()
-    return this.apply(topFunction.hashWithName("top($count)"), topFunction)
 }
 
 @Suppress("UNCHECKED_CAST")
