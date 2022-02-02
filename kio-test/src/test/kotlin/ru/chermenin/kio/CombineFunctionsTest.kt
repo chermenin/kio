@@ -374,7 +374,6 @@ class CombineFunctionsTest : KioPipelineTest() {
             rate = 2L to Duration.standardSeconds(1)
         ).withFixedWindow(Duration.standardSeconds(2))
         input.latest().that().satisfy {
-            println(it)
             assertTrue(it.count() >= 3)
             assertTrue(it.contains(9L))
         }
