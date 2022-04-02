@@ -21,24 +21,25 @@ import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.PCollection
 import ru.chermenin.kio.io.Reader
-import ru.chermenin.kio.utils.Configurable
 import ru.chermenin.kio.utils.hashWithName
 
 /**
  * Definition for Kafka reader.
  */
-class KafkaReader<K, V>(val pipeline: Pipeline) :
-    Configurable<KafkaIO.Read<K, V>, KafkaReader<K, V>>()
+class KafkaReader(val pipeline: Pipeline)
 
 /**
  * Method to create Kafka reader.
  */
-inline fun <K, V> Reader.kafka(): KafkaReader<K, V> {
+inline fun Reader.kafka(): KafkaReader {
     return KafkaReader(pipeline)
 }
 
-inline fun <K, V> KafkaReader<K, V>.topic(vararg topic: String): PCollection<KV<K, V>> {
-    val reader = getConfigurator().invoke(KafkaIO.read<K, V>().withTopics(topic.toList())).withoutMetadata()
+inline fun <K, V> KafkaReader.topic(
+    vararg topic: String,
+    build: KafkaIO.Read<K, V>.() -> KafkaIO.Read<K, V> = { this }
+): PCollection<KV<K, V>> {
+    val reader = KafkaIO.read<K, V>().build().withTopics(topic.toList()).withoutMetadata()
     return this.pipeline.apply(
         reader.hashWithName("Kafka().topic(${topic.joinToString(", ")})"),
         reader

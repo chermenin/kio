@@ -22,14 +22,12 @@ import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.values.PCollection
 import ru.chermenin.kio.io.Reader
-import ru.chermenin.kio.utils.Configurable
 import ru.chermenin.kio.utils.hashWithName
 
 /**
  * Definition for BigQuery reader.
  */
-class BigQueryReader(val pipeline: Pipeline) :
-    Configurable<BigQueryIO.TypedRead<TableRow>, BigQueryReader>()
+class BigQueryReader(val pipeline: Pipeline)
 
 /**
  * Method to create BigQuery reader.
@@ -44,8 +42,11 @@ inline fun Reader.bigQuery(): BigQueryReader {
  * @param query query to select
  * @return collection of table rows
  */
-inline fun BigQueryReader.select(query: String): PCollection<TableRow> {
-    val reader = getConfigurator().invoke(BigQueryIO.readTableRows().fromQuery(query))
+inline fun BigQueryReader.select(
+    query: String,
+    build: BigQueryIO.TypedRead<TableRow>.() -> BigQueryIO.TypedRead<TableRow> = { this }
+): PCollection<TableRow> {
+    val reader = BigQueryIO.readTableRows().build().fromQuery(query)
     return pipeline.apply(reader.hashWithName("BigQuery().select($query)"), reader)
 }
 
@@ -55,8 +56,11 @@ inline fun BigQueryReader.select(query: String): PCollection<TableRow> {
  * @param tableSpec a spec for the table
  * @return collection of table rows
  */
-inline fun BigQueryReader.table(tableSpec: String): PCollection<TableRow> {
-    val reader = getConfigurator().invoke(BigQueryIO.readTableRows().from(tableSpec))
+inline fun BigQueryReader.table(
+    tableSpec: String,
+    build: BigQueryIO.TypedRead<TableRow>.() -> BigQueryIO.TypedRead<TableRow> = { this }
+): PCollection<TableRow> {
+    val reader = BigQueryIO.readTableRows().build().from(tableSpec)
     return pipeline.apply(reader.hashWithName("BigQuery().table($tableSpec)"), reader)
 }
 
@@ -66,7 +70,10 @@ inline fun BigQueryReader.table(tableSpec: String): PCollection<TableRow> {
  * @param tableRef a reference to the table
  * @return collection of table rows
  */
-inline fun BigQueryReader.table(tableRef: TableReference): PCollection<TableRow> {
-    val reader = getConfigurator().invoke(BigQueryIO.readTableRows().from(tableRef))
+inline fun BigQueryReader.table(
+    tableRef: TableReference,
+    build: BigQueryIO.TypedRead<TableRow>.() -> BigQueryIO.TypedRead<TableRow> = { this }
+): PCollection<TableRow> {
+    val reader = BigQueryIO.readTableRows().build().from(tableRef)
     return pipeline.apply(reader.hashWithName("BigQuery().table($tableRef)"), reader)
 }

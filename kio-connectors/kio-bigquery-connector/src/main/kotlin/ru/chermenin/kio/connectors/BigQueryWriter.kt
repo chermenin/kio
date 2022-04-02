@@ -24,14 +24,12 @@ import org.apache.beam.sdk.io.gcp.bigquery.TableDestination
 import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.ValueInSingleWindow
 import ru.chermenin.kio.io.Writer
-import ru.chermenin.kio.utils.Configurable
 import ru.chermenin.kio.utils.hashWithName
 
 /**
  * Definition for BigQuery writer.
  */
-class BigQueryWriter<T>(val collection: PCollection<T>) :
-    Configurable<BigQueryIO.Write<T>, BigQueryWriter<T>>()
+class BigQueryWriter<T>(val collection: PCollection<T>)
 
 /**
  * Method to create BigQuery writer.
@@ -45,8 +43,11 @@ inline fun <T> Writer<T>.bigQuery(): BigQueryWriter<T> {
  *
  * @param destinations definition of dynamic destinations
  */
-inline fun <T> BigQueryWriter<T>.dynamicDestinations(destinations: DynamicDestinations<T, *>) {
-    val writer = getConfigurator().invoke(BigQueryIO.write<T>().to(destinations))
+inline fun <T> BigQueryWriter<T>.dynamicDestinations(
+    destinations: DynamicDestinations<T, *>,
+    build: BigQueryIO.Write<T>.() -> BigQueryIO.Write<T> = { this }
+) {
+    val writer = BigQueryIO.write<T>().build().to(destinations)
     collection.apply(writer.hashWithName("BigQuery().dynamicDestinations($destinations)"), writer)
 }
 
@@ -58,7 +59,8 @@ inline fun <T> BigQueryWriter<T>.dynamicDestinations(destinations: DynamicDestin
  */
 inline fun <T> BigQueryWriter<T>.dynamicDestinations(
     noinline getTable: (T) -> TableDestination,
-    noinline getSchema: (T) -> TableSchema
+    noinline getSchema: (T) -> TableSchema,
+    build: BigQueryIO.Write<T>.() -> BigQueryIO.Write<T> = { this }
 ) {
     this.dynamicDestinations(object : DynamicDestinations<T, Pair<TableDestination, TableSchema>>() {
         private val t = ClosureCleaner.clean(getTable)
@@ -75,7 +77,7 @@ inline fun <T> BigQueryWriter<T>.dynamicDestinations(
         override fun getSchema(destination: Pair<TableDestination, TableSchema>): TableSchema {
             return destination.second
         }
-    })
+    }, build)
 }
 
 /**
@@ -84,8 +86,11 @@ inline fun <T> BigQueryWriter<T>.dynamicDestinations(
  * @param tableSpec a spec of the destination table
  */
 @JvmName("writeTableRow")
-inline fun BigQueryWriter<TableRow>.table(tableSpec: String) {
-    val writer = getConfigurator().invoke(BigQueryIO.writeTableRows().to(tableSpec))
+inline fun BigQueryWriter<TableRow>.table(
+    tableSpec: String,
+    build: BigQueryIO.Write<TableRow>.() -> BigQueryIO.Write<TableRow> = { this }
+) {
+    val writer = BigQueryIO.writeTableRows().build().to(tableSpec)
     collection.apply(writer.hashWithName("BigQuery().table($tableSpec)"), writer)
 }
 
@@ -95,8 +100,11 @@ inline fun BigQueryWriter<TableRow>.table(tableSpec: String) {
  * @param tableRef a reference to the destination table
  */
 @JvmName("writeTableRow")
-inline fun BigQueryWriter<TableRow>.table(tableRef: TableReference) {
-    val writer = getConfigurator().invoke(BigQueryIO.writeTableRows().to(tableRef))
+inline fun BigQueryWriter<TableRow>.table(
+    tableRef: TableReference,
+    build: BigQueryIO.Write<TableRow>.() -> BigQueryIO.Write<TableRow> = { this }
+) {
+    val writer = BigQueryIO.writeTableRows().build().to(tableRef)
     collection.apply(writer.hashWithName("BigQuery().table($tableRef)"), writer)
 }
 
@@ -105,8 +113,11 @@ inline fun BigQueryWriter<TableRow>.table(tableRef: TableReference) {
  *
  * @param tableSpec a spec of the destination table
  */
-inline fun <T> BigQueryWriter<T>.table(tableSpec: String) {
-    val writer = getConfigurator().invoke(BigQueryIO.write<T>().to(tableSpec))
+inline fun <T> BigQueryWriter<T>.table(
+    tableSpec: String,
+    build: BigQueryIO.Write<T>.() -> BigQueryIO.Write<T> = { this }
+) {
+    val writer = BigQueryIO.write<T>().build().to(tableSpec)
     collection.apply(writer.hashWithName("BigQuery().table($tableSpec)"), writer)
 }
 
@@ -115,7 +126,10 @@ inline fun <T> BigQueryWriter<T>.table(tableSpec: String) {
  *
  * @param tableRef a reference to the destination table
  */
-inline fun <T> BigQueryWriter<T>.table(tableRef: TableReference) {
-    val writer = getConfigurator().invoke(BigQueryIO.write<T>().to(tableRef))
+inline fun <T> BigQueryWriter<T>.table(
+    tableRef: TableReference,
+    build: BigQueryIO.Write<T>.() -> BigQueryIO.Write<T> = { this }
+) {
+    val writer = BigQueryIO.write<T>().build().to(tableRef)
     collection.apply(writer.hashWithName("BigQuery().table($tableRef)"), writer)
 }

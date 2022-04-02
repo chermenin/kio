@@ -20,14 +20,12 @@ import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.PCollection
 import ru.chermenin.kio.io.Writer
-import ru.chermenin.kio.utils.Configurable
 import ru.chermenin.kio.utils.hashWithName
 
 /**
  * Definition for Kafka writer.
  */
-class KafkaWriter<K, V>(val collection: PCollection<KV<K, V>>) :
-    Configurable<KafkaIO.Write<K, V>, KafkaWriter<K, V>>()
+class KafkaWriter<K, V>(val collection: PCollection<KV<K, V>>)
 
 /**
  * Method to create Kafka writer.
@@ -36,7 +34,10 @@ inline fun <K, V> Writer<KV<K, V>>.kafka(): KafkaWriter<K, V> {
     return KafkaWriter(collection)
 }
 
-inline fun <K, V> KafkaWriter<K, V>.topic(topic: String) {
-    val writer = getConfigurator().invoke(KafkaIO.write<K, V>().withTopic(topic))
+inline fun <K, V> KafkaWriter<K, V>.topic(
+    topic: String,
+    build: KafkaIO.Write<K, V>.() -> KafkaIO.Write<K, V> = { this }
+) {
+    val writer = KafkaIO.write<K, V>().build().withTopic(topic)
     collection.apply(writer.hashWithName("Kafka().topic($topic)"), writer)
 }

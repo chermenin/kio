@@ -20,7 +20,6 @@ import org.apache.beam.sdk.transforms.Wait
 import org.apache.beam.sdk.transforms.windowing.*
 import org.apache.beam.sdk.values.*
 import org.joda.time.Duration
-import ru.chermenin.kio.utils.Configurator
 import ru.chermenin.kio.utils.hashWithName
 
 /**
@@ -32,19 +31,19 @@ import ru.chermenin.kio.utils.hashWithName
  */
 inline fun <T> PCollection<T>.withWindow(
     windowFn: WindowFn<T, *>,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
-    val window = options.invoke(Window.into(windowFn))
+    val window = Window.into(windowFn).configure()
     return this.apply(window.hashWithName("withWindow"), window)
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> PCollection<T>.withWindowByDays(
     number: Int,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = CalendarWindows.days(number) as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withCalendarWindowByDays($number)"))
 }
 
@@ -52,30 +51,30 @@ inline fun <T> PCollection<T>.withWindowByDays(
 inline fun <T> PCollection<T>.withWindowByWeeks(
     number: Int,
     startDayOfWeek: Int,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = CalendarWindows.weeks(number, startDayOfWeek) as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withCalendarWindowByWeeks($number, $startDayOfWeek)"))
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> PCollection<T>.withWindowByMonths(
     number: Int,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = CalendarWindows.months(number) as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withCalendarWindowByMonths($number)"))
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> PCollection<T>.withWindowByYears(
     number: Int,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = CalendarWindows.years(number) as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withCalendarWindowByYears($number)"))
 }
 
@@ -83,34 +82,34 @@ inline fun <T> PCollection<T>.withWindowByYears(
 inline fun <T> PCollection<T>.withFixedWindow(
     duration: Duration,
     offset: Duration = Duration.ZERO,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = FixedWindows
         .of(duration)
         .withOffset(offset)
         as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withFixedWindow($duration, $offset)"))
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> PCollection<T>.withGlobalWindow(
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = GlobalWindows() as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withGlobalWindow()"))
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> PCollection<T>.withSessionWindow(
     gap: Duration,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = Sessions
         .withGapDuration(gap)
         as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withSessionWindows($gap)"))
 }
 
@@ -119,14 +118,14 @@ inline fun <T> PCollection<T>.withSlidingWindow(
     size: Duration,
     period: Duration,
     offset: Duration = Duration.ZERO,
-    options: Configurator<Window<T>> = { it }
+    configure: Window<T>.() -> Window<T> = { this }
 ): PCollection<T> {
     val windowFn = SlidingWindows
         .of(size)
         .every(period)
         .withOffset(offset)
         as WindowFn<T, *>
-    return this.withWindow(windowFn, options)
+    return this.withWindow(windowFn, configure)
         .setName(windowFn.hashWithName("withSlidingWindow($size, $period, $offset)"))
 }
 
