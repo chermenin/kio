@@ -3,7 +3,7 @@
 
 ---
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/chermenin/kio/Java%20CI%20with%20Maven)](https://github.com/chermenin/kio/actions/workflows/maven.yml)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/chermenin/kio/maven.yml?branch=master)](https://github.com/chermenin/kio/actions/workflows/maven.yml)
 [![CodeFactor](https://www.codefactor.io/repository/github/chermenin/kio/badge)](https://www.codefactor.io/repository/github/chermenin/kio)
 [![codecov](https://codecov.io/gh/chermenin/kio/branch/master/graph/badge.svg)](https://codecov.io/gh/chermenin/kio)
 [![Maven Central](https://img.shields.io/maven-central/v/ru.chermenin.kio/kio-core.svg)](https://search.maven.org/search?q=g:ru.chermenin.kio)
