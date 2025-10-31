@@ -56,7 +56,7 @@ inline fun <K, V> PCollection<KV<K, V>>.asMultiMapView(): PCollectionView<Map<K,
 }
 
 inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> Iterable<U>
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, Iterable<U>>
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
@@ -64,7 +64,7 @@ inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                g(context.element(), context).forEach { context.output(it) }
+                g.invoke(context.element(), context).forEach { context.output(it) }
             }
         }
     ).withSideInputs(sideInputs)
@@ -72,7 +72,7 @@ inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
 }
 
 inline fun <T, U> PCollectionWithSideInput<T>.map(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> U
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, U>
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
@@ -80,7 +80,7 @@ inline fun <T, U> PCollectionWithSideInput<T>.map(
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                context.output(g(context.element(), context))
+                context.output(g.invoke(context.element(), context))
             }
         }
     ).withSideInputs(sideInputs)

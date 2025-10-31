@@ -147,11 +147,6 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
-                <configuration>
-                    <args>
-                        <arg>-Xlambdas=class</arg>
-                    </args>
-                </configuration>
                 <executions>
                     <execution>
                         <id>compile</id>

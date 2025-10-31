@@ -115,20 +115,26 @@ inline fun <reified K, reified V, reified X> PCollection<KV<K, V>>.fullOuterJoin
  *  - `mergeCombiners`, to combine two U's into a single one.
  */
 class Combiner<V, U>(
-    createCombiner: (V) -> U,
-    mergeValue: (U, V) -> U,
-    mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<V, U>,
+    mergeValue: KioFunction2<U, V, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     private val elementCoder: Coder<V>,
     private val outputCoder: Coder<U>
 ) : Combine.CombineFn<V, Pair<MutableList<V>, U?>, U>() {
 
     // defeat closures
-    private val cleanedCreateCombiner: (V) -> U = ClosureCleaner.clean(createCombiner)
-    private val cleanedMergeValue: (U, V) -> U = ClosureCleaner.clean(mergeValue)
-    private val cleanedMergeCombiners: (U, U) -> U = ClosureCleaner.clean(mergeCombiners)
+    private val cleanedCreateCombiner: KioFunction1<V, U> = ClosureCleaner.clean(createCombiner)
+    private val cleanedMergeValue: KioFunction2<U, V, U> = ClosureCleaner.clean(mergeValue)
+    private val cleanedMergeCombiners: KioFunction2<U, U, U> = ClosureCleaner.clean(mergeCombiners)
 
     private fun foldAccumulator(accumulator: Pair<MutableList<V>, U?>): U? {
-        return if (accumulator.second != null) accumulator.first.fold(accumulator.second!!, cleanedMergeValue) else null
+        return if (accumulator.second != null) {
+            accumulator.first.fold(accumulator.second!!) { acc: U, value: V ->
+                cleanedMergeValue.invoke(acc, value)
+            }
+        } else {
+            null
+        }
     }
 
     override fun createAccumulator(): Pair<MutableList<V>, U?> {
@@ -137,7 +143,7 @@ class Combiner<V, U>(
 
     override fun addInput(mutableAccumulator: Pair<MutableList<V>, U?>, input: V): Pair<MutableList<V>, U?> {
         return if (mutableAccumulator.second == null) {
-            Pair<MutableList<V>, U?>(mutableAccumulator.first, cleanedCreateCombiner(input))
+            Pair<MutableList<V>, U?>(mutableAccumulator.first, cleanedCreateCombiner.invoke(input))
         } else {
             val list = mutableAccumulator.first
             list.add(input)
@@ -162,7 +168,7 @@ class Combiner<V, U>(
                     if (accB == null) {
                         accA
                     } else {
-                        cleanedMergeCombiners(accA, accB)
+                        cleanedMergeCombiners.invoke(accA, accB)
                     }
                 }
             Pair(mutableListOf(), mergedAcc)

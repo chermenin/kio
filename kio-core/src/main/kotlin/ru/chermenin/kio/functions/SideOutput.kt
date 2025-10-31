@@ -36,7 +36,7 @@ inline fun <T> PCollection<T>.withSideOutputs(vararg sideOutputTag: TupleTag<*>)
 }
 
 inline fun <reified T, reified U> PCollectionWithSideOutput<T>.flatMap(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> Iterable<U>
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, Iterable<U>>
 ): Pair<PCollection<U>, PCollectionTuple> {
     val generalTag = TupleTag<U>()
     val mapper = ParDo.of(
@@ -45,7 +45,7 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.flatMap(
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                g(context.element(), context).forEach { context.output(it) }
+                g.invoke(context.element(), context).forEach { context.output(it) }
             }
         }
     ).withOutputTags(generalTag, TupleTagList.of(sideOutputTags))
@@ -54,7 +54,7 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.flatMap(
 }
 
 inline fun <reified T, reified U> PCollectionWithSideOutput<T>.map(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> U
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, U>
 ): Pair<PCollection<U>, PCollectionTuple> {
     val generalTag = TupleTag<U>()
     val mapper = ParDo.of(
@@ -63,7 +63,7 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.map(
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                context.output(g(context.element(), context))
+                context.output(g.invoke(context.element(), context))
             }
         }
     ).withOutputTags(generalTag, TupleTagList.of(sideOutputTags))
