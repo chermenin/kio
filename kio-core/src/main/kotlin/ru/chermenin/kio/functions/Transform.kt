@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import kotlin.reflect.jvm.jvmName
 import org.apache.beam.sdk.coders.Coder
 import org.apache.beam.sdk.coders.KvCoder
@@ -25,6 +24,7 @@ import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.values.*
 import org.joda.time.Instant
 import ru.chermenin.kio.coders.PairCoder
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
 inline fun <T, U> PCollection<T>.transform(noinline f: (PCollection<T>) -> PCollection<U>): PCollection<U> {

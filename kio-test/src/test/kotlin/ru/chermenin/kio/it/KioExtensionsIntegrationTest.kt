@@ -35,7 +35,7 @@ class KioExtensionsIntegrationTest : KioPipelineTest() {
             .filter { it % 2 > 0 }
             .flatMap { num -> arrayOfNulls<String>(num).map { String(charArrayOf((num + 42).toChar())) } }
             .map { String(charArrayOf(it[0])) }
-            .keyBy { it[0].toInt() }
+            .keyBy { it[0].code }
             .groupByKey()
             .toPair()
 

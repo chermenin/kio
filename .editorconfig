@@ -9,7 +9,7 @@ charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{kt, kts, xml, kt.spec, kts.spec}]
+[*.{kt,kts,xml,kt.spec,kts.spec}]
 indent_size = 4
 max_line_length = 120
 disabled_rules = no-wildcard-imports

@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import kotlin.reflect.jvm.jvmName
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.ParDo
@@ -24,6 +23,7 @@ import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.PCollectionTuple
 import org.apache.beam.sdk.values.TupleTag
 import org.apache.beam.sdk.values.TupleTagList
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
 class PCollectionWithSideOutput<T>(

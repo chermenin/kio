@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import org.apache.beam.sdk.coders.*
 import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.join.CoGroupByKey
@@ -27,6 +26,7 @@ import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.TupleTag
 import org.apache.beam.sdk.values.TypeDescriptor
 import ru.chermenin.kio.coders.PairCoder
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
 const val COMBINER_BUFFER_MAX_SIZE = 20

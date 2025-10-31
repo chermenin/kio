@@ -30,7 +30,7 @@ class WordCountIntegrationTest : KioPipelineTest() {
 
         // Configure a pipeline
         kio.read().text(inputPath)
-            .map { it.toLowerCase() }
+            .map { it.lowercase() }
             .flatMap { it.split("\\W+".toRegex()) }
             .filter { it.isNotEmpty() }
             .countByValue()
