@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.Serializable
 import org.joda.time.Duration
 import ru.chermenin.kio.cep.nfa.NFA
 import ru.chermenin.kio.cep.nfa.State
+import ru.chermenin.kio.functions.KioFunction1
 
 /**
  * Class to define a pattern to match elements.
@@ -34,7 +35,7 @@ abstract class Pattern<T>(
     val name: String,
     val parent: Pattern<T>?,
     val consuming: Consuming,
-    val condition: (T) -> Boolean
+    val condition: KioFunction1<T, Boolean>
 ) : Serializable {
 
     companion object {
@@ -48,7 +49,10 @@ abstract class Pattern<T>(
          * @param condition pattern condition (optional)
          * @param T event type
          */
-        fun <T> startWith(name: String, condition: (T) -> Boolean = { true }): PatternBuilder<T> {
+        fun <T> startWith(
+            name: String,
+            condition: KioFunction1<T, Boolean> = KioFunction1 { true }
+        ): PatternBuilder<T> {
             return PatternBuilder(name, condition = condition)
         }
     }
@@ -71,7 +75,7 @@ abstract class Pattern<T>(
         private val name: String,
         private val parent: PatternBuilder<T>? = null,
         private val consuming: Consuming = Consuming.NEXT,
-        private val condition: (T) -> Boolean
+        private val condition: KioFunction1<T, Boolean>
     ) {
 
         /**
@@ -82,7 +86,10 @@ abstract class Pattern<T>(
          * @param condition condition for current pattern element (optional)
          * @return pattern builder
          */
-        fun then(name: String, condition: (T) -> Boolean = { true }): PatternBuilder<T> {
+        fun then(
+            name: String,
+            condition: KioFunction1<T, Boolean> = KioFunction1 { true }
+        ): PatternBuilder<T> {
             return PatternBuilder(name, this, condition = condition)
         }
 
@@ -95,7 +102,10 @@ abstract class Pattern<T>(
          * @param condition condition for current pattern element (optional)
          * @return pattern builder
          */
-        fun thenFollowBy(name: String, condition: (T) -> Boolean = { true }): PatternBuilder<T> {
+        fun thenFollowBy(
+            name: String,
+            condition: KioFunction1<T, Boolean> = KioFunction1 { true }
+        ): PatternBuilder<T> {
             return PatternBuilder(name, this, Consuming.FOLLOW_BY, condition)
         }
 
@@ -107,7 +117,10 @@ abstract class Pattern<T>(
          * @param condition condition for current pattern element (optional)
          * @return pattern builder
          */
-        fun thenFollowByAny(name: String, condition: (T) -> Boolean = { true }): PatternBuilder<T> {
+        fun thenFollowByAny(
+            name: String,
+            condition: KioFunction1<T, Boolean> = KioFunction1 { true }
+        ): PatternBuilder<T> {
             return PatternBuilder(name, this, Consuming.FOLLOW_BY_ANY, condition)
         }
 
@@ -157,7 +170,7 @@ abstract class Pattern<T>(
         while (currentPattern.parent != null) {
             nextPattern = currentPattern
             nextState = currentState
-            currentPattern = currentPattern.parent!!
+            currentPattern = currentPattern.parent
             if (states.containsKey(currentPattern.name)) {
                 currentState = states[currentPattern.name]!!
             } else {
@@ -166,9 +179,9 @@ abstract class Pattern<T>(
             }
             currentState.take(nextPattern.condition, nextState)
             when (nextPattern.consuming) {
-                Consuming.FOLLOW_BY -> currentState.skip({ !nextPattern.condition(it) }, currentState)
+                Consuming.FOLLOW_BY -> currentState.skip({ !nextPattern.condition.invoke(it) }, currentState)
                 Consuming.FOLLOW_BY_ANY -> currentState.skip({ true }, currentState)
-                else -> { }
+                else -> {}
             }
         }
 

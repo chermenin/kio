@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,8 +121,6 @@ class Combiner<V, U>(
     private val elementCoder: Coder<V>,
     private val outputCoder: Coder<U>
 ) : Combine.CombineFn<V, Pair<MutableList<V>, U?>, U>() {
-
-    // defeat closures
     private val cleanedCreateCombiner: KioFunction1<V, U> = ClosureCleaner.clean(createCombiner)
     private val cleanedMergeValue: KioFunction2<U, V, U> = ClosureCleaner.clean(mergeValue)
     private val cleanedMergeCombiners: KioFunction2<U, U, U> = ClosureCleaner.clean(mergeCombiners)
@@ -189,9 +187,9 @@ class Combiner<V, U>(
 }
 
 inline fun <T, reified U> PCollection<T>.combine(
-    noinline createCombiner: (T) -> U,
-    noinline mergeValue: (U, T) -> U,
-    noinline mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<T, U>,
+    mergeValue: KioFunction2<U, T, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<U> {
     val outputCoder = coder ?: this.pipeline.coderRegistry.getCoder(TypeDescriptor.of(U::class.java))
@@ -201,9 +199,9 @@ inline fun <T, reified U> PCollection<T>.combine(
 
 @Suppress("UNCHECKED_CAST")
 inline fun <K, V, reified U> PCollection<KV<K, V>>.combineByKey(
-    noinline createCombiner: (V) -> U,
-    noinline mergeValue: (U, V) -> U,
-    noinline mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<V, U>,
+    mergeValue: KioFunction2<U, V, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<KV<K, U>> {
     val outputCoder = coder ?: this.pipeline.coderRegistry.getCoder(TypeDescriptor.of(U::class.java))
@@ -219,40 +217,45 @@ inline fun <K, V, reified U> PCollection<KV<K, V>>.combineByKey(
 
 inline fun <T, reified U> PCollection<T>.aggregate(
     zeroValue: U,
-    noinline seqOp: (U, T) -> U,
-    noinline combOp: (U, U) -> U,
+    seqOp: KioFunction2<U, T, U>,
+    combOp: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<U> {
-    return this.combine({ seqOp(zeroValue, it) }, seqOp, combOp, coder)
+    val cleanedSeqOp = ClosureCleaner.clean(seqOp)
+    return this.combine({ cleanedSeqOp.invoke(zeroValue, it) }, seqOp, combOp, coder)
 }
 
 inline fun <K, V, reified U> PCollection<KV<K, V>>.aggregateByKey(
     zeroValue: U,
-    noinline seqOp: (U, V) -> U,
-    noinline combOp: (U, U) -> U,
+    seqOp: KioFunction2<U, V, U>,
+    combOp: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<KV<K, U>> {
-    return this.combineByKey({ seqOp(zeroValue, it) }, seqOp, combOp, coder)
+    val cleanedSeqOp = ClosureCleaner.clean(seqOp)
+    return this.combineByKey({ cleanedSeqOp.invoke(zeroValue, it) }, seqOp, combOp, coder)
 }
 
-inline fun <reified T> PCollection<T>.fold(zeroValue: T, noinline f: (T, T) -> T): PCollection<T> {
-    return this.combine({ f(zeroValue, it) }, f, f, this.coder)
+inline fun <reified T> PCollection<T>.fold(zeroValue: T, f: KioFunction2<T, T, T>): PCollection<T> {
+    val g = ClosureCleaner.clean(f)
+    return this.combine({ g.invoke(zeroValue, it) }, g, g, this.coder)
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <K, reified V> PCollection<KV<K, V>>.foldByKey(
     zeroValue: V,
-    noinline f: (V, V) -> V
+    f: KioFunction2<V, V, V>
 ): PCollection<KV<K, V>> {
-    return this.combineByKey({ f(zeroValue, it) }, f, f, this.coder.coderArguments[1] as Coder<V>)
+    val g = ClosureCleaner.clean(f)
+    val valueCoder = this.coder.coderArguments[1] as Coder<V>
+    return this.combineByKey({ g.invoke(zeroValue, it) }, g, g, valueCoder)
 }
 
-inline fun <reified T> PCollection<T>.reduce(noinline f: (T, T) -> T): PCollection<T> {
+inline fun <reified T> PCollection<T>.reduce(f: KioFunction2<T, T, T>): PCollection<T> {
     return this.combine({ it }, f, f, this.coder)
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <K, reified V> PCollection<KV<K, V>>.reduceByKey(noinline f: (V, V) -> V): PCollection<KV<K, V>> {
+inline fun <K, reified V> PCollection<KV<K, V>>.reduceByKey(f: KioFunction2<V, V, V>): PCollection<KV<K, V>> {
     return this.combineByKey({ it }, f, f, this.coder.coderArguments[1] as Coder<V>)
 }
 
@@ -312,7 +315,7 @@ inline fun <K, V> PCollection<KV<K, V>>.groupByKey(): PCollection<KV<K, Iterable
     return this.apply(grouping.hashWithName("groupByKey"), grouping)
 }
 
-inline fun <T, reified K> PCollection<T>.groupBy(noinline f: (T) -> K): PCollection<KV<K, Iterable<T>>> {
+inline fun <T, reified K> PCollection<T>.groupBy(f: KioFunction1<T, K>): PCollection<KV<K, Iterable<T>>> {
     return this.keyBy(f).groupByKey()
 }
 

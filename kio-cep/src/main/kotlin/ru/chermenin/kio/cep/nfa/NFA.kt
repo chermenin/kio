@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ class NFA<T> internal constructor(
 
         internalStates = updatedStates + (
             beginningState.getTransitions()
-                .filter { it.condition(event) }
+                .filter { it.condition.invoke(event) }
                 .map { InternalState(it.to, null, event, timestamp) }
             )
 
@@ -77,7 +77,7 @@ class NFA<T> internal constructor(
     ): Iterable<InternalState<T>> {
 
         return internalState.currentState.getTransitions().flatMap {
-            if (it.condition(event)) {
+            if (it.condition.invoke(event)) {
                 when (it.action) {
 
                     Transition.Action.TAKE -> {

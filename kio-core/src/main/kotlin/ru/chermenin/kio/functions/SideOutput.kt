@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.flatMap(
     val generalTag = TupleTag<U>()
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
@@ -59,7 +59,7 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.map(
     val generalTag = TupleTag<U>()
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
@@ -71,10 +71,11 @@ inline fun <reified T, reified U> PCollectionWithSideOutput<T>.map(
     return Pair(results[generalTag], results)
 }
 
-inline fun <reified T> PCollection<T>.splitBy(noinline p: (T) -> Boolean): Pair<PCollection<T>, PCollection<T>> {
+inline fun <reified T> PCollection<T>.splitBy(p: KioFunction1<T, Boolean>): Pair<PCollection<T>, PCollection<T>> {
     val sideOutputTag = TupleTag<T>()
+    val g = ClosureCleaner.clean(p)
     val results = this.withSideOutputs(sideOutputTag).flatMap { element, context: DoFn<T, T>.ProcessContext ->
-        if (p(element)) {
+        if (g.invoke(element)) {
             listOf(element)
         } else {
             context.output(sideOutputTag, element)

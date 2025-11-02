@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
@@ -76,7 +76,7 @@ inline fun <T, U> PCollectionWithSideInput<T>.map(
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
