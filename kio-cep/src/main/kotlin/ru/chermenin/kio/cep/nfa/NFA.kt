@@ -81,12 +81,14 @@ class NFA<T> internal constructor(
                 when (it.action) {
 
                     Transition.Action.TAKE -> {
-                        listOf(InternalState(
-                            it.to,
-                            internalState,
-                            event,
-                            internalState.startTimestamp
-                        ))
+                        listOf(
+                            InternalState(
+                                it.to,
+                                internalState,
+                                event,
+                                internalState.startTimestamp
+                            )
+                        )
                     }
 
                     Transition.Action.SKIP -> {

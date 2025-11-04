@@ -198,9 +198,11 @@ object WindowedWordCount {
         val windowSize = kio.arguments.long("windowSize") { 10L } // default: 10 minutes
 
         val minTimestamp = Instant(kio.arguments.long("minTimestampMillis") { System.currentTimeMillis() })
-        val maxTimestamp = Instant(kio.arguments.long("maxTimestampMillis") {
-            minTimestamp.plus(Duration.standardHours(1)).millis
-        })
+        val maxTimestamp = Instant(
+            kio.arguments.long("maxTimestampMillis") {
+                minTimestamp.plus(Duration.standardHours(1)).millis
+            }
+        )
 
         // The Beam SDK lets us run the same pipeline with either a bounded or unbounded input source.
         kio.read().text(inputFile)

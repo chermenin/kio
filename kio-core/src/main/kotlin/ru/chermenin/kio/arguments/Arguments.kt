@@ -36,7 +36,8 @@ class Arguments internal constructor(private val argumentsMap: Map<String, List<
                     .flatMap {
                         val n = it.name
                         if ((!n.startsWith("get") && !n.startsWith("is")) ||
-                            it.parameterTypes.isNotEmpty() || it.returnType == Unit::class.java) {
+                            it.parameterTypes.isNotEmpty() || it.returnType == Unit::class.java
+                        ) {
                             emptyList()
                         } else {
                             listOf(Introspector.decapitalize(n.substring(if (n.startsWith("is")) 2 else 3)))

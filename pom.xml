@@ -287,7 +287,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Code style check plugin -->
+            <!-- Code style check and format plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -300,8 +300,7 @@
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true" classname="com.pinterest.ktlint.Main" classpathref="maven.plugin.classpath">
                                     <arg value="**/*.kt" />
-                                    <arg value="--reporter=plain" />
-                                    <arg value="--reporter=checkstyle,output=${project.build.directory}/ktlint.xml" />
+                                    <arg value="--format" />
                                 </java>
                             </target>
                         </configuration>

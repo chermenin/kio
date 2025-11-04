@@ -16,9 +16,9 @@
 
 package ru.chermenin.kio.cep.nfa
 
+import java.io.Serializable
 import ru.chermenin.kio.functions.KioFunction1
 import ru.chermenin.kio.utils.ClosureCleaner
-import java.io.Serializable
 
 /**
  * Class to define a state of the NFA with the name and the transitions list.
@@ -34,7 +34,8 @@ internal class State<T>(val name: String, val type: Type) : Serializable {
     private fun addTransition(
         action: Transition.Action,
         to: State<T>,
-        condition: KioFunction1<T, Boolean>) {
+        condition: KioFunction1<T, Boolean>
+    ) {
         val cleanedCondition = ClosureCleaner.clean(condition)
         transitions.add(Transition(to, action, cleanedCondition))
     }

@@ -67,7 +67,11 @@ inline fun <T> BigQueryWriter<T>.dynamicDestinations(
         private val t = ClosureCleaner.clean(getTable)
         private val s = ClosureCleaner.clean(getSchema)
 
-        override fun getDestination(element: @UnknownKeyFor @Initialized ValueInSingleWindow<T?>?): Pair<TableDestination, TableSchema>? {
+        override fun getDestination(
+            element:
+            @UnknownKeyFor @Initialized
+            ValueInSingleWindow<T?>?
+        ): Pair<TableDestination, TableSchema>? {
             return Pair(t.invoke(element?.value), s.invoke(element?.value))
         }
 

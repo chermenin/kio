@@ -63,10 +63,13 @@ class NFATest {
         val startState = stateMap["start"]
         assertTrue(startState?.type == State.Type.INTERMEDIATE)
         val startTransitions = startState?.getTransitions()?.map { it.to.name to it.action }
-        assertEquals(listOf(
-            "next" to Transition.Action.TAKE,
-            "start" to Transition.Action.SKIP
-        ), startTransitions)
+        assertEquals(
+            listOf(
+                "next" to Transition.Action.TAKE,
+                "start" to Transition.Action.SKIP
+            ),
+            startTransitions
+        )
 
         // check "next" state
         assertTrue(stateMap.containsKey("next"))

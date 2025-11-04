@@ -16,11 +16,11 @@
 
 package ru.chermenin.kio.utils
 
-import ru.chermenin.kio.functions.KioFunction
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
+import ru.chermenin.kio.functions.KioFunction
 
 @Suppress("UNCHECKED_CAST")
 object ClosureCleaner {
