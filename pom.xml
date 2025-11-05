@@ -74,7 +74,7 @@
         <junit.version>4.13.1</junit.version>
         <hamcrest.version>2.0.0.0</hamcrest.version>
         <joda-time.version>2.10.6</joda-time.version>
-        <kafka.version>2.6.3</kafka.version>
+        <kafka.version>3.9.1</kafka.version>
     </properties>
 
     <dependencyManagement>
