@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ class WordCountIntegrationTest : KioPipelineTest() {
 
         // Configure a pipeline
         kio.read().text(inputPath)
-            .map { it.toLowerCase() }
+            .map { it.lowercase() }
             .flatMap { it.split("\\W+".toRegex()) }
             .filter { it.isNotEmpty() }
             .countByValue()

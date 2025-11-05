@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ class Arguments internal constructor(private val argumentsMap: Map<String, List<
                     .flatMap {
                         val n = it.name
                         if ((!n.startsWith("get") && !n.startsWith("is")) ||
-                            it.parameterTypes.isNotEmpty() || it.returnType == Unit::class.java) {
+                            it.parameterTypes.isNotEmpty() || it.returnType == Unit::class.java
+                        ) {
                             emptyList()
                         } else {
                             listOf(Introspector.decapitalize(n.substring(if (n.startsWith("is")) 2 else 3)))

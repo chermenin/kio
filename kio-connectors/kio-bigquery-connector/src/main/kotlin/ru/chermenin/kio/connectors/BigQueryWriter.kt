@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,16 @@
 package ru.chermenin.kio.connectors
 
 import com.google.api.services.bigquery.model.*
-import com.twitter.chill.ClosureCleaner
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.io.gcp.bigquery.DynamicDestinations
 import org.apache.beam.sdk.io.gcp.bigquery.TableDestination
 import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.ValueInSingleWindow
+import org.checkerframework.checker.initialization.qual.Initialized
+import org.checkerframework.checker.nullness.qual.UnknownKeyFor
+import ru.chermenin.kio.functions.KioFunction1
 import ru.chermenin.kio.io.Writer
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.Configurable
 import ru.chermenin.kio.utils.hashWithName
 
@@ -57,15 +60,19 @@ inline fun <T> BigQueryWriter<T>.dynamicDestinations(destinations: DynamicDestin
  * @param getSchema function to get schema from the element
  */
 inline fun <T> BigQueryWriter<T>.dynamicDestinations(
-    noinline getTable: (T) -> TableDestination,
-    noinline getSchema: (T) -> TableSchema
+    getTable: KioFunction1<T?, TableDestination>,
+    getSchema: KioFunction1<T?, TableSchema>
 ) {
     this.dynamicDestinations(object : DynamicDestinations<T, Pair<TableDestination, TableSchema>>() {
         private val t = ClosureCleaner.clean(getTable)
         private val s = ClosureCleaner.clean(getSchema)
 
-        override fun getDestination(element: ValueInSingleWindow<T>): Pair<TableDestination, TableSchema> {
-            return Pair(t(element.value!!), s(element.value!!))
+        override fun getDestination(
+            element:
+            @UnknownKeyFor @Initialized
+            ValueInSingleWindow<T?>?
+        ): Pair<TableDestination, TableSchema>? {
+            return Pair(t.invoke(element?.value), s.invoke(element?.value))
         }
 
         override fun getTable(destination: Pair<TableDestination, TableSchema>): TableDestination {

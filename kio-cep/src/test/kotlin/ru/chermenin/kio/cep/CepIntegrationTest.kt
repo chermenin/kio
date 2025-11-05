@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,39 +34,41 @@ class CepIntegrationTest : KioPipelineTest() {
 
     @Test
     fun testSimplePattern() {
-        val inputCollection: PCollection<Event> = kio.parallelize(listOf(
-            Event(1, "barfoo", 1.0),
-            Event(2, "start", 2.0),
-            Event(3, "foobar", 3.0),
-            Event(4, "foo", 4.0),
-            Event(5, "middle", 5.0),
-            Event(6, "middle", 6.0),
-            Event(7, "bar", 3.0),
-            Event(8, "end", 1.0),
-            Event(9, "other", 2.0),
-            Event(10, "bar", 4.0),
-            Event(11, "barfoo", 1.0),
-            Event(12, "start", 2.0),
-            Event(13, "foobar", 3.0),
-            Event(14, "foo", 4.0),
-            Event(15, "middle", 5.0),
-            Event(16, "middle", 6.0),
-            Event(17, "bar", 3.0),
-            Event(18, "end", 1.0),
-            Event(19, "other", 2.0),
-            Event(20, "bar", 4.0),
-            Event(21, "barfoo", 1.0),
-            Event(22, "start", 2.0),
-            Event(23, "foobar", 3.0),
-            Event(24, "foo", 4.0),
-            Event(25, "middle", 5.0),
-            Event(26, "middle", 6.0),
-            Event(27, "bar", 3.0),
-            Event(28, "end", 1.0),
-            Event(29, "other", 2.0),
-            Event(30, "bar", 4.0),
-            Event(31, "foo", 42.0)
-        ))
+        val inputCollection: PCollection<Event> = kio.parallelize(
+            listOf(
+                Event(1, "barfoo", 1.0),
+                Event(2, "start", 2.0),
+                Event(3, "foobar", 3.0),
+                Event(4, "foo", 4.0),
+                Event(5, "middle", 5.0),
+                Event(6, "middle", 6.0),
+                Event(7, "bar", 3.0),
+                Event(8, "end", 1.0),
+                Event(9, "other", 2.0),
+                Event(10, "bar", 4.0),
+                Event(11, "barfoo", 1.0),
+                Event(12, "start", 2.0),
+                Event(13, "foobar", 3.0),
+                Event(14, "foo", 4.0),
+                Event(15, "middle", 5.0),
+                Event(16, "middle", 6.0),
+                Event(17, "bar", 3.0),
+                Event(18, "end", 1.0),
+                Event(19, "other", 2.0),
+                Event(20, "bar", 4.0),
+                Event(21, "barfoo", 1.0),
+                Event(22, "start", 2.0),
+                Event(23, "foobar", 3.0),
+                Event(24, "foo", 4.0),
+                Event(25, "middle", 5.0),
+                Event(26, "middle", 6.0),
+                Event(27, "bar", 3.0),
+                Event(28, "end", 1.0),
+                Event(29, "other", 2.0),
+                Event(30, "bar", 4.0),
+                Event(31, "foo", 42.0)
+            )
+        )
 
         val pattern: Pattern<Event> = Pattern
             .startWith<Event>("start") { it.name == "start" }

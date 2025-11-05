@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,14 +89,17 @@ class ReifyFunctionsTest : KioPipelineTest() {
 
     @Test
     fun testAsWindowedValues() {
-        val input = kio.parallelize(listOf(
-            "a" to 0,
-            "b" to 5,
-            "c" to 10,
-            "d" to 40,
-            "e" to 55,
-            "f" to 60
-        ), coder = PairCoder.of(StringUtf8Coder.of(), VarIntCoder.of()))
+        val input = kio.parallelize(
+            listOf(
+                "a" to 0,
+                "b" to 5,
+                "c" to 10,
+                "d" to 40,
+                "e" to 55,
+                "f" to 60
+            ),
+            coder = PairCoder.of(StringUtf8Coder.of(), VarIntCoder.of())
+        )
             .withTimestamps { Instant.ofEpochMilli(it.second.toLong()) }
             .map { it.first }
             .keyBy { (it[0] - 'a') % 2 }

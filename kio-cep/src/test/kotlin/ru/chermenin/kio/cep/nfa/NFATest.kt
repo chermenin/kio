@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,10 +63,13 @@ class NFATest {
         val startState = stateMap["start"]
         assertTrue(startState?.type == State.Type.INTERMEDIATE)
         val startTransitions = startState?.getTransitions()?.map { it.to.name to it.action }
-        assertEquals(listOf(
-            "next" to Transition.Action.TAKE,
-            "start" to Transition.Action.SKIP
-        ), startTransitions)
+        assertEquals(
+            listOf(
+                "next" to Transition.Action.TAKE,
+                "start" to Transition.Action.SKIP
+            ),
+            startTransitions
+        )
 
         // check "next" state
         assertTrue(stateMap.containsKey("next"))

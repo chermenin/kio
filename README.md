@@ -21,7 +21,7 @@ val kio = Kio.fromArguments(args)
 kio.read().text("~/input.txt")
     .map { it.toLowerCase() }
     .flatMap { it.split("\\W+".toRegex()) }
-    .filter { it.isNotEmpty() }
+    .filter { it.isNotBlank() }
     .countByValue()
     .forEach { println(it) }
 
@@ -35,6 +35,6 @@ For more information about Kio, please see the documentation in the `docs` direc
 
 ## License
 
-Copyright © 2020 Alex Chermenin
+Copyright © 2020-2025 Alex Chermenin
 
 Licensed under the Apache License, Version 2.0: [https://www.apache.org/licenses/LICENSE-2.0.txt](https://www.apache.org/licenses/LICENSE-2.0.txt)

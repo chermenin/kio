@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import kotlin.reflect.jvm.jvmName
 import org.apache.beam.sdk.transforms.DoFn
 import org.apache.beam.sdk.transforms.ParDo
@@ -24,6 +23,7 @@ import org.apache.beam.sdk.transforms.View
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.PCollectionView
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
 class PCollectionWithSideInput<T>(
@@ -56,15 +56,15 @@ inline fun <K, V> PCollection<KV<K, V>>.asMultiMapView(): PCollectionView<Map<K,
 }
 
 inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> Iterable<U>
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, Iterable<U>>
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                g(context.element(), context).forEach { context.output(it) }
+                g.invoke(context.element(), context).forEach { context.output(it) }
             }
         }
     ).withSideInputs(sideInputs)
@@ -72,15 +72,15 @@ inline fun <T, U> PCollectionWithSideInput<T>.flatMap(
 }
 
 inline fun <T, U> PCollectionWithSideInput<T>.map(
-    noinline f: (T, DoFn<T, U>.ProcessContext) -> U
+    f: KioFunction2<T, DoFn<T, U>.ProcessContext, U>
 ): PCollection<U> {
     val mapper = ParDo.of(
         object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
             @ProcessElement
             fun processElement(context: ProcessContext) {
-                context.output(g(context.element(), context))
+                context.output(g.invoke(context.element(), context))
             }
         }
     ).withSideInputs(sideInputs)

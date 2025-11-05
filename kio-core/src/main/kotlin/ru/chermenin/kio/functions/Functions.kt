@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package ru.chermenin.kio.options
+package ru.chermenin.kio.functions
 
-import org.apache.beam.sdk.options.Description
-import org.apache.beam.sdk.options.PipelineOptions
+import java.io.Serializable
 
-@Description("Additional options for Kio")
-interface KioOptions : PipelineOptions {
+interface KioFunction : Serializable
 
-    @get:Description("Kio version")
-    var kioVersion: String?
+fun interface KioFunction0<T> : KioFunction {
+    fun invoke(t: T)
+}
 
-    @get:Description("Kotlin version")
-    var kotlinVersion: String?
+fun interface KioFunction1<T1, R> : KioFunction {
+    fun invoke(t1: T1): R
+}
 
-    @get:Description("Additional application arguments")
-    var arguments: String?
+fun interface KioFunction2<T1, T2, R> : KioFunction {
+    fun invoke(t1: T1, t2: T2): R
 }

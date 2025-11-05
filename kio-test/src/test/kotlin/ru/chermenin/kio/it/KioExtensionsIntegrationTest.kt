@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ class KioExtensionsIntegrationTest : KioPipelineTest() {
             .filter { it % 2 > 0 }
             .flatMap { num -> arrayOfNulls<String>(num).map { String(charArrayOf((num + 42).toChar())) } }
             .map { String(charArrayOf(it[0])) }
-            .keyBy { it[0].toInt() }
+            .keyBy { it[0].code }
             .groupByKey()
             .toPair()
 
@@ -55,13 +55,15 @@ class KioExtensionsIntegrationTest : KioPipelineTest() {
         data class Person(val id: Int, val name: String, val age: Int) : Serializable
 
         kio
-            .parallelize(listOf(
-                Person(0, "John", 26),
-                Person(1, "Peter", 13),
-                Person(2, "Tim", 64),
-                Person(3, "Jane", 31),
-                Person(4, "Bill", 17)
-            ))
+            .parallelize(
+                listOf(
+                    Person(0, "John", 26),
+                    Person(1, "Peter", 13),
+                    Person(2, "Tim", 64),
+                    Person(3, "Jane", 31),
+                    Person(4, "Bill", 17)
+                )
+            )
             .toRows()
             .sql("SELECT id FROM PCOLLECTION WHERE age >= 18")
             .map { it.getValue<Int>("id") }
@@ -78,33 +80,39 @@ class KioExtensionsIntegrationTest : KioPipelineTest() {
         data class City(val id: Int, val name: String) : Serializable
 
         val persons = kio
-            .parallelize(listOf(
-                Person(0, "John", 26, 2),
-                Person(1, "Peter", 13, 0),
-                Person(2, "Tim", 64, 1),
-                Person(3, "Jane", 31, 1),
-                Person(4, "Bill", 17, 2)
-            ))
+            .parallelize(
+                listOf(
+                    Person(0, "John", 26, 2),
+                    Person(1, "Peter", 13, 0),
+                    Person(2, "Tim", 64, 1),
+                    Person(3, "Jane", 31, 1),
+                    Person(4, "Bill", 17, 2)
+                )
+            )
 
         val cities = kio
-            .parallelize(listOf(
-                City(0, "Moscow"),
-                City(1, "Paris"),
-                City(2, "London"),
-                City(4, "Tokyo")
-            ))
+            .parallelize(
+                listOf(
+                    City(0, "Moscow"),
+                    City(1, "Paris"),
+                    City(2, "London"),
+                    City(4, "Tokyo")
+                )
+            )
 
         with(
             persons.toRows() to "persons",
             cities.toRows() to "cities"
         )
-            .sql("""
+            .sql(
+                """
                 SELECT p.name
                 FROM persons p
                 JOIN cities c
                   ON p.cityId = c.id
                 WHERE c.name = 'Paris'
-            """)
+            """
+            )
             .map { it.getValue<String>("name") }
             .that().containsInAnyOrder("Tim", "Jane")
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import kotlin.reflect.jvm.jvmName
 import org.apache.beam.sdk.coders.Coder
 import org.apache.beam.sdk.coders.KvCoder
@@ -25,23 +24,27 @@ import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.values.*
 import org.joda.time.Instant
 import ru.chermenin.kio.coders.PairCoder
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
-inline fun <T, U> PCollection<T>.transform(noinline f: (PCollection<T>) -> PCollection<U>): PCollection<U> {
+inline fun <T, U> PCollection<T>.transform(f: KioFunction1<PCollection<T>, PCollection<U>>): PCollection<U> {
     return this.transform(f.hashWithName("transform(${f::class.jvmName})"), f)
 }
 
 inline fun <T, U> PCollection<T>.transform(
     name: String,
-    noinline f: (PCollection<T>) -> PCollection<U>
+    f: KioFunction1<PCollection<T>, PCollection<U>>
 ): PCollection<U> {
-    return this.apply(name, object : PTransform<PCollection<T>, PCollection<U>>() {
-        private val g = ClosureCleaner.clean(f) // defeat closure
+    return this.apply(
+        name,
+        object : PTransform<PCollection<T>, PCollection<U>>() {
+            private val g = ClosureCleaner.clean(f)
 
-        override fun expand(input: PCollection<T>): PCollection<U> {
-            return g(input)
+            override fun expand(input: PCollection<T>): PCollection<U> {
+                return g.invoke(input)
+            }
         }
-    })
+    )
 }
 
 inline fun <T> PCollection<T>.distinct(): PCollection<T> {
@@ -49,98 +52,116 @@ inline fun <T> PCollection<T>.distinct(): PCollection<T> {
     return this.apply(deduplicator.hashWithName("distinct"), deduplicator)
 }
 
-inline fun <T> PCollection<T>.filter(noinline f: (T) -> Boolean): PCollection<T> {
-    return this.apply(f.hashWithName("filter(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, T>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <T> PCollection<T>.filter(f: KioFunction1<T, Boolean>): PCollection<T> {
+    return this.apply(
+        f.hashWithName("filter(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, T>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                val element = context.element()
-                if (g(element)) {
-                    context.output(element)
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    val element = context.element()
+                    if (g.invoke(element)) {
+                        context.output(element)
+                    }
                 }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <reified T, U> PCollection<T>.flatMap(noinline f: (T) -> Iterable<U>): PCollection<U> {
-    return this.apply(f.hashWithName("flatMap(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <reified T, U> PCollection<T>.flatMap(f: KioFunction1<T, Iterable<U>>): PCollection<U> {
+    return this.apply(
+        f.hashWithName("flatMap(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, U>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                g(context.element()).forEach { context.output(it) }
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    g.invoke(context.element()).forEach { context.output(it) }
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <K, V, U> PCollection<KV<K, V>>.flatMapValues(noinline f: (V) -> Iterable<U>): PCollection<KV<K, U>> {
+inline fun <K, V, U> PCollection<KV<K, V>>.flatMapValues(f: KioFunction1<V, Iterable<U>>): PCollection<KV<K, U>> {
     return this
-        .flatMap { kv -> f(kv.value).map { KV.of(kv.key, it) } }
+        .flatMap { kv -> f.invoke(kv.value).map { KV.of(kv.key, it) } }
         .setName(f.hashWithName("flatMapValues(${f::class.jvmName})"))
 }
 
-inline fun <T> PCollection<T>.forEach(noinline f: (T) -> Unit) {
-    this.apply(f.hashWithName("forEach(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, Void>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <T> PCollection<T>.forEach(f: KioFunction0<T>) {
+    this.apply(
+        f.hashWithName("forEach(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, Void>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                g(context.element())
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    g.invoke(context.element())
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <T, K> PCollection<T>.keyBy(noinline f: (T) -> K): PCollection<KV<K, T>> {
-    return this.apply(f.hashWithName("keyBy(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, KV<K, T>>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <T, K> PCollection<T>.keyBy(f: KioFunction1<T, K>): PCollection<KV<K, T>> {
+    return this.apply(
+        f.hashWithName("keyBy(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, KV<K, T>>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                val element = context.element()
-                context.output(KV.of(g(element), element))
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    val element = context.element()
+                    context.output(KV.of(g.invoke(element), element))
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
 inline fun <K, V> PCollection<KV<K, V>>.keys(): PCollection<K> {
-    val keyExtractor: (KV<K, V>) -> K = { it.key!! }
-    return this.apply(keyExtractor.hashWithName("keys"), ParDo.of(
-        object : DoFn<KV<K, V>, K>() {
-            private val g = ClosureCleaner.clean(keyExtractor) // defeat closure
+    val keyExtractor: KioFunction1<KV<K, V>, K> = KioFunction1 { it.key!! }
+    return this.apply(
+        keyExtractor.hashWithName("keys"),
+        ParDo.of(
+            object : DoFn<KV<K, V>, K>() {
+                private val g = ClosureCleaner.clean(keyExtractor)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                context.output(g(context.element()))
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    context.output(g.invoke(context.element()))
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <reified T, reified U> PCollection<T>.map(noinline f: (T) -> U): PCollection<U> {
-    return this.apply(f.hashWithName("map(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, U>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <reified T, reified U> PCollection<T>.map(f: KioFunction1<T, U>): PCollection<U> {
+    return this.apply(
+        f.hashWithName("map(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, U>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                context.output(g(context.element()))
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    context.output(g.invoke(context.element()))
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <K, V, U> PCollection<KV<K, V>>.mapValues(noinline f: (V) -> U): PCollection<KV<K, U>> {
+inline fun <K, V, U> PCollection<KV<K, V>>.mapValues(f: KioFunction1<V, U>): PCollection<KV<K, U>> {
     return this
-        .flatMapValues { listOf(f(it)) }
+        .flatMapValues { listOf(f.invoke(it)) }
         .setName(f.hashWithName("mapValues(${f::class.jvmName})"))
 }
 
@@ -157,37 +178,43 @@ inline fun <T> PCollection<T>.partition(partitions: Int): PCollectionList<T> {
     return this.apply(partitioner.hashWithName("partition($partitions)"), partitioner)
 }
 
-inline fun <T> PCollection<T>.partitionBy(partitions: Int, noinline f: (T) -> Int): PCollectionList<T> {
-    val partitioner = Partition.of(partitions, object : Partition.PartitionFn<T> {
+inline fun <T> PCollection<T>.partitionBy(partitions: Int, f: KioFunction1<T, Int>): PCollectionList<T> {
+    val partitioner = Partition.of(
+        partitions,
+        object : Partition.PartitionFn<T> {
 
-        private val g = ClosureCleaner.clean(f) // defeat closure
+            private val g = ClosureCleaner.clean(f)
 
-        override fun partitionFor(element: T, numPartitions: Int): Int {
-            return g(element) % numPartitions
+            override fun partitionFor(element: T, numPartitions: Int): Int {
+                return g.invoke(element) % numPartitions
+            }
         }
-    })
+    )
     return this.apply(partitioner.hashWithName("partitionBy($partitions, $f)"), partitioner)
 }
 
-inline fun <T> PCollection<T>.peek(noinline f: (T) -> Unit): PCollection<T> {
-    return this.apply(f.hashWithName("peek(${f::class.jvmName})"), ParDo.of(
-        object : DoFn<T, T>() {
-            private val g = ClosureCleaner.clean(f) // defeat closure
+inline fun <T> PCollection<T>.peek(f: KioFunction0<T>): PCollection<T> {
+    return this.apply(
+        f.hashWithName("peek(${f::class.jvmName})"),
+        ParDo.of(
+            object : DoFn<T, T>() {
+                private val g = ClosureCleaner.clean(f)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                val element = context.element()
-                g(element)
-                context.output(element)
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    val element = context.element()
+                    g.invoke(element)
+                    context.output(element)
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified K, reified V> PCollection<KV<K, V>>.swap(): PCollection<KV<V, K>> {
     val pairValueCoders = this.coder.coderArguments
-    val mapper: (KV<K, V>) -> KV<V, K> = { KV.of(it.value, it.key) }
+    val mapper: KioFunction1<KV<K, V>, KV<V, K>> = KioFunction1 { KV.of(it.value, it.key) }
     return this
         .map(mapper)
         .setName(mapper.hashWithName("swap"))
@@ -207,7 +234,7 @@ inline fun <T> PCollection<T>.toJson(): PCollection<String> {
 @Suppress("UNCHECKED_CAST")
 inline fun <K, V> PCollection<Pair<K, V>>.toKV(): PCollection<KV<K, V>> {
     val pairValueCoders = this.coder.coderArguments
-    val mapper: (Pair<K, V>) -> KV<K, V> = { KV.of(it.first, it.second) }
+    val mapper: KioFunction1<Pair<K, V>, KV<K, V>> = KioFunction1 { KV.of(it.first, it.second) }
     return this
         .map(mapper)
         .setName(mapper.hashWithName("toKV"))
@@ -217,31 +244,34 @@ inline fun <K, V> PCollection<Pair<K, V>>.toKV(): PCollection<KV<K, V>> {
 @Suppress("UNCHECKED_CAST")
 fun <K, V> PCollection<KV<K, V>>.toPair(): PCollection<Pair<K, V>> {
     val keyValueCoders = this.coder.coderArguments
-    val mapper: (KV<K, V>) -> Pair<K, V> = { Pair(it.key!!, it.value) }
+    val mapper: KioFunction1<KV<K, V>, Pair<K, V>> = KioFunction1 { Pair(it.key!!, it.value) }
     return this.map(mapper)
         .setName(mapper.hashWithName("toPair"))
         .setCoder(PairCoder.of(keyValueCoders[0] as Coder<K>, keyValueCoders[1] as Coder<V>))
 }
 
 inline fun <K, V> PCollection<KV<K, V>>.values(): PCollection<V> {
-    val valueExtractor: (KV<K, V>) -> V = { it.value }
-    return this.apply(valueExtractor.hashWithName("values"), ParDo.of(
-        object : DoFn<KV<K, V>, V>() {
-            private val g = ClosureCleaner.clean(valueExtractor) // defeat closure
+    val valueExtractor: KioFunction1<KV<K, V>, V> = KioFunction1 { it.value }
+    return this.apply(
+        valueExtractor.hashWithName("values"),
+        ParDo.of(
+            object : DoFn<KV<K, V>, V>() {
+                private val g = ClosureCleaner.clean(valueExtractor)
 
-            @ProcessElement
-            fun processElement(context: ProcessContext) {
-                context.output(g(context.element()))
+                @ProcessElement
+                fun processElement(context: ProcessContext) {
+                    context.output(g.invoke(context.element()))
+                }
             }
-        }
-    ))
+        )
+    )
 }
 
-inline fun <T> PCollection<T>.withTimestamps(noinline f: (T) -> Instant): PCollection<T> {
+inline fun <T> PCollection<T>.withTimestamps(f: KioFunction1<T, Instant>): PCollection<T> {
     val timestampExtractor = WithTimestamps.of(object : SerializableFunction<T, Instant> {
-        private val g = ClosureCleaner.clean(f) // defeat closure
+        private val g = ClosureCleaner.clean(f)
         override fun apply(element: T): Instant {
-            return g(element)
+            return g.invoke(element)
         }
     })
     return this.apply(timestampExtractor.hashWithName("withTimestamps(${f::class.jvmName})"), timestampExtractor)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,17 +69,20 @@ inline fun <reified T : Any> PCollection<T>.toRows(): PCollection<Row> {
 
         // map elements to rows and apply SQL query
         return this
-            .apply(schema.hashWithName("rowsPreparation"), ParDo.of(
-                object : DoFn<T, Row>() {
-                    @ProcessElement
-                    fun processElement(context: ProcessContext) {
-                        val element = context.element()
-                        val values = T::class.memberProperties.map { it.get(element) }
-                        val row = Row.withSchema(schema).addValues(values).build()
-                        context.output(row)
+            .apply(
+                schema.hashWithName("rowsPreparation"),
+                ParDo.of(
+                    object : DoFn<T, Row>() {
+                        @ProcessElement
+                        fun processElement(context: ProcessContext) {
+                            val element = context.element()
+                            val values = T::class.memberProperties.map { it.get(element) }
+                            val row = Row.withSchema(schema).addValues(values).build()
+                            context.output(row)
+                        }
                     }
-                }
-            ))
+                )
+            )
             .setCoder(RowCoder.of(schema))
     } else {
         throw IllegalStateException("SQL query can be applied to the PCollection of data class only.")

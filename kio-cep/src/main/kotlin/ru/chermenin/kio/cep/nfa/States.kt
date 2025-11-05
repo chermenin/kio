@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package ru.chermenin.kio.cep.nfa
 
 import java.io.Serializable
+import ru.chermenin.kio.functions.KioFunction1
+import ru.chermenin.kio.utils.ClosureCleaner
 
 /**
  * Class to define a state of the NFA with the name and the transitions list.
@@ -29,19 +31,24 @@ internal class State<T>(val name: String, val type: Type) : Serializable {
 
     private val transitions = mutableListOf<Transition<T>>()
 
-    private fun addTransition(action: Transition.Action, to: State<T>, condition: (T) -> Boolean) {
-        transitions.add(Transition(to, action, condition))
+    private fun addTransition(
+        action: Transition.Action,
+        to: State<T>,
+        condition: KioFunction1<T, Boolean>
+    ) {
+        val cleanedCondition = ClosureCleaner.clean(condition)
+        transitions.add(Transition(to, action, cleanedCondition))
     }
 
     fun getTransitions(): List<Transition<T>> {
         return transitions.toList()
     }
 
-    fun take(condition: (T) -> Boolean, to: State<T> = this) {
+    fun take(condition: KioFunction1<T, Boolean>, to: State<T> = this) {
         addTransition(Transition.Action.TAKE, to, condition)
     }
 
-    fun skip(condition: (T) -> Boolean, to: State<T> = this) {
+    fun skip(condition: KioFunction1<T, Boolean>, to: State<T> = this) {
         addTransition(Transition.Action.SKIP, to, condition)
     }
 
@@ -63,7 +70,7 @@ internal class State<T>(val name: String, val type: Type) : Serializable {
 internal class Transition<T>(
     val to: State<T>,
     val action: Action,
-    val condition: (T) -> Boolean
+    val condition: KioFunction1<T, Boolean>
 ) : Serializable {
 
     enum class Action {

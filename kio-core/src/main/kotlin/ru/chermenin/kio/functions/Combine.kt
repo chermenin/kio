@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Alex Chermenin
+ * Copyright 2020-2025 Alex Chermenin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package ru.chermenin.kio.functions
 
-import com.twitter.chill.ClosureCleaner
 import org.apache.beam.sdk.coders.*
 import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.join.CoGroupByKey
@@ -27,6 +26,7 @@ import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.TupleTag
 import org.apache.beam.sdk.values.TypeDescriptor
 import ru.chermenin.kio.coders.PairCoder
+import ru.chermenin.kio.utils.ClosureCleaner
 import ru.chermenin.kio.utils.hashWithName
 
 const val COMBINER_BUFFER_MAX_SIZE = 20
@@ -115,20 +115,24 @@ inline fun <reified K, reified V, reified X> PCollection<KV<K, V>>.fullOuterJoin
  *  - `mergeCombiners`, to combine two U's into a single one.
  */
 class Combiner<V, U>(
-    createCombiner: (V) -> U,
-    mergeValue: (U, V) -> U,
-    mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<V, U>,
+    mergeValue: KioFunction2<U, V, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     private val elementCoder: Coder<V>,
     private val outputCoder: Coder<U>
 ) : Combine.CombineFn<V, Pair<MutableList<V>, U?>, U>() {
-
-    // defeat closures
-    private val cleanedCreateCombiner: (V) -> U = ClosureCleaner.clean(createCombiner)
-    private val cleanedMergeValue: (U, V) -> U = ClosureCleaner.clean(mergeValue)
-    private val cleanedMergeCombiners: (U, U) -> U = ClosureCleaner.clean(mergeCombiners)
+    private val cleanedCreateCombiner: KioFunction1<V, U> = ClosureCleaner.clean(createCombiner)
+    private val cleanedMergeValue: KioFunction2<U, V, U> = ClosureCleaner.clean(mergeValue)
+    private val cleanedMergeCombiners: KioFunction2<U, U, U> = ClosureCleaner.clean(mergeCombiners)
 
     private fun foldAccumulator(accumulator: Pair<MutableList<V>, U?>): U? {
-        return if (accumulator.second != null) accumulator.first.fold(accumulator.second!!, cleanedMergeValue) else null
+        return if (accumulator.second != null) {
+            accumulator.first.fold(accumulator.second!!) { acc: U, value: V ->
+                cleanedMergeValue.invoke(acc, value)
+            }
+        } else {
+            null
+        }
     }
 
     override fun createAccumulator(): Pair<MutableList<V>, U?> {
@@ -137,7 +141,7 @@ class Combiner<V, U>(
 
     override fun addInput(mutableAccumulator: Pair<MutableList<V>, U?>, input: V): Pair<MutableList<V>, U?> {
         return if (mutableAccumulator.second == null) {
-            Pair<MutableList<V>, U?>(mutableAccumulator.first, cleanedCreateCombiner(input))
+            Pair<MutableList<V>, U?>(mutableAccumulator.first, cleanedCreateCombiner.invoke(input))
         } else {
             val list = mutableAccumulator.first
             list.add(input)
@@ -162,7 +166,7 @@ class Combiner<V, U>(
                     if (accB == null) {
                         accA
                     } else {
-                        cleanedMergeCombiners(accA, accB)
+                        cleanedMergeCombiners.invoke(accA, accB)
                     }
                 }
             Pair(mutableListOf(), mergedAcc)
@@ -183,9 +187,9 @@ class Combiner<V, U>(
 }
 
 inline fun <T, reified U> PCollection<T>.combine(
-    noinline createCombiner: (T) -> U,
-    noinline mergeValue: (U, T) -> U,
-    noinline mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<T, U>,
+    mergeValue: KioFunction2<U, T, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<U> {
     val outputCoder = coder ?: this.pipeline.coderRegistry.getCoder(TypeDescriptor.of(U::class.java))
@@ -195,9 +199,9 @@ inline fun <T, reified U> PCollection<T>.combine(
 
 @Suppress("UNCHECKED_CAST")
 inline fun <K, V, reified U> PCollection<KV<K, V>>.combineByKey(
-    noinline createCombiner: (V) -> U,
-    noinline mergeValue: (U, V) -> U,
-    noinline mergeCombiners: (U, U) -> U,
+    createCombiner: KioFunction1<V, U>,
+    mergeValue: KioFunction2<U, V, U>,
+    mergeCombiners: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<KV<K, U>> {
     val outputCoder = coder ?: this.pipeline.coderRegistry.getCoder(TypeDescriptor.of(U::class.java))
@@ -213,40 +217,45 @@ inline fun <K, V, reified U> PCollection<KV<K, V>>.combineByKey(
 
 inline fun <T, reified U> PCollection<T>.aggregate(
     zeroValue: U,
-    noinline seqOp: (U, T) -> U,
-    noinline combOp: (U, U) -> U,
+    seqOp: KioFunction2<U, T, U>,
+    combOp: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<U> {
-    return this.combine({ seqOp(zeroValue, it) }, seqOp, combOp, coder)
+    val cleanedSeqOp = ClosureCleaner.clean(seqOp)
+    return this.combine({ cleanedSeqOp.invoke(zeroValue, it) }, seqOp, combOp, coder)
 }
 
 inline fun <K, V, reified U> PCollection<KV<K, V>>.aggregateByKey(
     zeroValue: U,
-    noinline seqOp: (U, V) -> U,
-    noinline combOp: (U, U) -> U,
+    seqOp: KioFunction2<U, V, U>,
+    combOp: KioFunction2<U, U, U>,
     coder: Coder<U>? = null
 ): PCollection<KV<K, U>> {
-    return this.combineByKey({ seqOp(zeroValue, it) }, seqOp, combOp, coder)
+    val cleanedSeqOp = ClosureCleaner.clean(seqOp)
+    return this.combineByKey({ cleanedSeqOp.invoke(zeroValue, it) }, seqOp, combOp, coder)
 }
 
-inline fun <reified T> PCollection<T>.fold(zeroValue: T, noinline f: (T, T) -> T): PCollection<T> {
-    return this.combine({ f(zeroValue, it) }, f, f, this.coder)
+inline fun <reified T> PCollection<T>.fold(zeroValue: T, f: KioFunction2<T, T, T>): PCollection<T> {
+    val g = ClosureCleaner.clean(f)
+    return this.combine({ g.invoke(zeroValue, it) }, g, g, this.coder)
 }
 
 @Suppress("UNCHECKED_CAST")
 inline fun <K, reified V> PCollection<KV<K, V>>.foldByKey(
     zeroValue: V,
-    noinline f: (V, V) -> V
+    f: KioFunction2<V, V, V>
 ): PCollection<KV<K, V>> {
-    return this.combineByKey({ f(zeroValue, it) }, f, f, this.coder.coderArguments[1] as Coder<V>)
+    val g = ClosureCleaner.clean(f)
+    val valueCoder = this.coder.coderArguments[1] as Coder<V>
+    return this.combineByKey({ g.invoke(zeroValue, it) }, g, g, valueCoder)
 }
 
-inline fun <reified T> PCollection<T>.reduce(noinline f: (T, T) -> T): PCollection<T> {
+inline fun <reified T> PCollection<T>.reduce(f: KioFunction2<T, T, T>): PCollection<T> {
     return this.combine({ it }, f, f, this.coder)
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <K, reified V> PCollection<KV<K, V>>.reduceByKey(noinline f: (V, V) -> V): PCollection<KV<K, V>> {
+inline fun <K, reified V> PCollection<KV<K, V>>.reduceByKey(f: KioFunction2<V, V, V>): PCollection<KV<K, V>> {
     return this.combineByKey({ it }, f, f, this.coder.coderArguments[1] as Coder<V>)
 }
 
@@ -306,7 +315,7 @@ inline fun <K, V> PCollection<KV<K, V>>.groupByKey(): PCollection<KV<K, Iterable
     return this.apply(grouping.hashWithName("groupByKey"), grouping)
 }
 
-inline fun <T, reified K> PCollection<T>.groupBy(noinline f: (T) -> K): PCollection<KV<K, Iterable<T>>> {
+inline fun <T, reified K> PCollection<T>.groupBy(f: KioFunction1<T, K>): PCollection<KV<K, Iterable<T>>> {
     return this.keyBy(f).groupByKey()
 }
 
