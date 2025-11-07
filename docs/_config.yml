@@ -34,4 +34,4 @@ aux_links:
   "Kio on GitHub":
     - "//github.com/chermenin/kio"
 
-footer_content: "Copyright &copy; 2020-2025 <a href=\"https://code.chermenin.ru\">Alex Chermenin</a><br />Licensed under <a href=\"https://www.apache.org/licenses/LICENSE-2.0.txt\" target=\"_blank\">Apache 2.0</a>."
+footer_content: "&copy; 2020-2025 <a href=\"https://code.chermenin.ru\">Alex Chermenin</a><br />Licensed under <a href=\"https://www.apache.org/licenses/LICENSE-2.0.txt\" target=\"_blank\">Apache 2.0</a>."
